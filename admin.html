@@ -75,8 +75,12 @@
             const pass = document.getElementById('password').value;
             
             document.getElementById('btnLogin').innerText = "Verifikasi...";
+
+            const res = await fetch(`${GAS_URL}?action=loginAdmin&username=${user}&password=${pass}`, {
+                method: 'POST',
+                redirect: 'follow' 
+            });
             
-            const res = await fetch(`${GAS_URL}?action=loginAdmin&username=${user}&password=${pass}`, {method: 'POST'});
             const json = await res.json();
             
             if(json.status === "success") {
