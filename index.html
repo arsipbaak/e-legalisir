@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Legalisir Politeknik Negeri Madura</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body class="bg-gray-100 min-h-screen font-sans">
+    <div class="max-w-md mx-auto bg-white min-h-screen shadow-lg relative">
+        
+        <!-- Header -->
+        <div class="bg-blue-800 text-white p-4 text-center">
+            <h1 class="text-xl font-bold">E-Legalisir POLTERA</h1>
+        </div>
+
+        <!-- Section Login -->
+        <div id="section-login" class="p-6">
+            <h2 class="text-lg font-semibold mb-4 text-gray-700">Login Alumni</h2>
+            <div class="mb-4">
+                <label class="block text-sm mb-1 text-gray-600">NIM</label>
+                <input type="text" id="nim" class="w-full border rounded p-2 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Masukkan NIM Anda">
+            </div>
+            <!-- Catatan: Untuk captcha, Anda bisa integrasikan Google reCAPTCHA di sini -->
+            <button onclick="login()" id="btnLogin" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition">Cek Data Alumni</button>
+        </div>
+
+        <!-- Section Form Pengajuan -->
+        <div id="section-form" class="p-6 hidden">
+            <div class="bg-blue-50 p-3 rounded mb-4 text-sm">
+                <p><strong>Nama:</strong> <span id="lblNama"></span></p>
+                <p><strong>Prodi:</strong> <span id="lblProdi"></span> (<span id="lblTahun"></span>)</p>
+            </div>
+
+            <form id="formPengajuan">
+                <h3 class="font-bold text-gray-700 border-b pb-1 mb-3">1. Upload Dokumen (Max 1MB, JPG/PNG)</h3>
+                
+                <label class="block text-sm mb-1 text-gray-600">Upload Ijazah</label>
+                <input type="file" id="fileIjazah" accept="image/png, image/jpeg" class="w-full border p-1 text-sm mb-2" onchange="checkSize(this)">
+                <label class="block text-sm mb-1 text-gray-600">Jumlah Legalisir Ijazah</label>
+                <input type="number" id="jmlIjazah" value="0" min="0" class="w-full border rounded p-2 mb-4" onchange="hitungTotal()">
+
+                <label class="block text-sm mb-1 text-gray-600">Upload Transkrip</label>
+                <input type="file" id="fileTranskrip" accept="image/png, image/jpeg" class="w-full border p-1 text-sm mb-2" onchange="checkSize(this)">
+                <label class="block text-sm mb-1 text-gray-600">Jumlah Legalisir Transkrip</label>
+                <input type="number" id="jmlTranskrip" value="0" min="0" class="w-full border rounded p-2 mb-4" onchange="hitungTotal()">
+
+                <h3 class="font-bold text-gray-700 border-b pb-1 mb-3">2. Pembayaran</h3>
+                <div class="bg-yellow-50 p-3 rounded mb-3 border border-yellow-200">
+                    <p class="text-sm">Total Tagihan: <br><strong class="text-xl text-red-600" id="lblTotal">Rp 0</strong></p>
+                    <p class="text-xs text-gray-600 mt-2">Transfer ke:<br><strong id="lblBank">...</strong><br>A.N. <strong id="lblAtasNama">...</strong></p>
+                </div>
+
+                <label class="block text-sm mb-1 text-gray-600">Upload Bukti Bayar</label>
+                <input type="file" id="fileBukti" accept="image/png, image/jpeg" class="w-full border p-1 text-sm mb-4" onchange="checkSize(this)">
+
+                <h3 class="font-bold text-gray-700 border-b pb-1 mb-3">3. Pengiriman & Kontak</h3>
+                <label class="block text-sm mb-1 text-gray-600">No. WhatsApp / HP</label>
+                <input type="text" id="noHp" class="w-full border rounded p-2 mb-3" placeholder="08...">
+
+                <label class="block text-sm mb-1 text-gray-600">Metode Pengambilan</label>
+                <select id="metode" class="w-full border rounded p-2 mb-6">
+                    <option value="Ambil di POLTERA">Ambil di POLTERA</option>
+                    <option value="Ekspedisi COD">Dikirim (Ekspedisi COD)</option>
+                </select>
+
+                <button type="button" onclick="submitForm()" id="btnSubmit" class="w-full bg-green-600 text-white py-3 rounded font-bold hover:bg-green-700 transition">Kirim Pengajuan</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // GANTI DENGAN URL WEB APP GOOGLE APPS SCRIPT ANDA
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbwTKcKIeh5PM3VHm8fBQjSRm06NiJflI7xg4DNqosajObCCmb3TmizO-zL6XjgYigQN/exec"; 
+        
+        let globalData = {};
+        let pengaturan = { biaya: 0 };
+
+        async function login() {
+            const nim = document.getElementById('nim').value;
+            if(!nim) return Swal.fire('Error', 'NIM harus diisi!', 'error');
+
+            document.getElementById('btnLogin').innerText = "Loading...";
+            
+            try {
+                // Fetch Login
+                const res = await fetch(`${GAS_URL}?action=login&nim=${nim}`, { method: 'POST' });
+                const json = await res.json();
+                
+                if(json.status === "success") {
+                    globalData = json.data;
+                    document.getElementById('lblNama').innerText = globalData.nama;
+                    document.getElementById('lblProdi').innerText = globalData.prodi;
+                    document.getElementById('lblTahun').innerText = globalData.tahunLulus;
+                    
+                    // Fetch Pengaturan
+                    const resPengaturan = await fetch(`${GAS_URL}?action=getPengaturan`, { method: 'POST' });
+                    const jsonPeng = await resPengaturan.json();
+                    
+                    if(jsonPeng.status === "success") {
+                        pengaturan.biaya = parseInt(jsonPeng.data.biayaPerLembar);
+                        document.getElementById('lblBank').innerText = `${jsonPeng.data.namaBank} - ${jsonPeng.data.noRekening}`;
+                        document.getElementById('lblAtasNama').innerText = jsonPeng.data.atasNama;
+                        
+                        document.getElementById('section-login').classList.add('hidden');
+                        document.getElementById('section-form').classList.remove('hidden');
+                    }
+                } else {
+                    Swal.fire('Gagal', json.message, 'error');
+                }
+            } catch (err) {
+                Swal.fire('Error', 'Gagal koneksi ke server.', 'error');
+            }
+            document.getElementById('btnLogin').innerText = "Cek Data Alumni";
+        }
+
+        function checkSize(input) {
+            if (input.files.length > 0) {
+                const fileSize = input.files[0].size / 1024 / 1024; // in MB
+                if (fileSize > 1) {
+                    Swal.fire('Peringatan', 'Ukuran file maksimal 1 MB!', 'warning');
+                    input.value = ''; // Reset
+                }
+            }
+        }
+
+        function hitungTotal() {
+            const jIjazah = parseInt(document.getElementById('jmlIjazah').value) || 0;
+            const jTranskrip = parseInt(document.getElementById('jmlTranskrip').value) || 0;
+            const total = (jIjazah + jTranskrip) * pengaturan.biaya;
+            document.getElementById('lblTotal').innerText = `Rp ${total.toLocaleString('id-ID')}`;
+            return total;
+        }
+
+        const getBase64 = (file) => new Promise((resolve, reject) => {
+            if(!file) return resolve(null);
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = error => reject(error);
+        });
+
+        async function submitForm() {
+            const jIjazah = parseInt(document.getElementById('jmlIjazah').value) || 0;
+            const jTranskrip = parseInt(document.getElementById('jmlTranskrip').value) || 0;
+            const totalBiaya = hitungTotal();
+            const noHp = document.getElementById('noHp').value;
+            const fileBukti = document.getElementById('fileBukti').files[0];
+            const fileIjazah = document.getElementById('fileIjazah').files[0];
+            const fileTranskrip = document.getElementById('fileTranskrip').files[0];
+            const metode = document.getElementById('metode').value;
+
+            if(jIjazah === 0 && jTranskrip === 0) return Swal.fire('Error', 'Pilih minimal 1 dokumen untuk dilegalisir', 'error');
+            if(!fileBukti) return Swal.fire('Error', 'Upload Bukti Bayar wajib diisi!', 'error');
+            if(!noHp) return Swal.fire('Error', 'Nomor WA wajib diisi!', 'error');
+
+            document.getElementById('btnSubmit').innerText = "Mengirim Data... (Tunggu Sesaat)";
+            document.getElementById('btnSubmit').disabled = true;
+
+            try {
+                const b64Ijazah = await getBase64(fileIjazah);
+                const b64Transkrip = await getBase64(fileTranskrip);
+                const b64Bukti = await getBase64(fileBukti);
+
+                const payload = {
+                    nim: globalData.nim,
+                    nama: globalData.nama,
+                    noHp: noHp,
+                    jmlIjazah: jIjazah,
+                    jmlTranskrip: jTranskrip,
+                    totalBiaya: totalBiaya,
+                    metode: metode,
+                    fileIjazah: b64Ijazah,
+                    fileTranskrip: b64Transkrip,
+                    fileBukti: b64Bukti
+                };
+
+                const res = await fetch(`${GAS_URL}?action=submit`, {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+                
+                const json = await res.json();
+                
+                if(json.status === "success") {
+                    Swal.fire('Berhasil!', 'Pengajuan berhasil dikirim, cek WA secara berkala.', 'success').then(() => {
+                        window.location.reload();
+                    });
+                } else {
+                    Swal.fire('Gagal', json.message, 'error');
+                }
+            } catch (err) {
+                Swal.fire('Error', 'Terjadi kesalahan saat upload data.', 'error');
+            }
+            
+            document.getElementById('btnSubmit').innerText = "Kirim Pengajuan";
+            document.getElementById('btnSubmit').disabled = false;
+        }
+    </script>
+</body>
+</html>
