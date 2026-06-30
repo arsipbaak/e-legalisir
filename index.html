@@ -1,202 +1,431 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>E-Legalisir Politeknik Negeri Madura</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>E-Legalisir POLTERA</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f1f5f9; }
+    .hide { display: none !important; }
+  </style>
+  <script>tailwind.config = { theme: { extend: { colors: { 'poltera-navy': '#1e3a8a', 'poltera-accent': '#f59e0b', 'poltera-dark': '#0f172a' } } } }</script>
 </head>
-<body class="bg-gray-100 min-h-screen font-sans">
-    <div class="max-w-md mx-auto bg-white min-h-screen shadow-lg relative">
+<body class="text-slate-800">
+
+  <!-- HALAMAN LOGIN -->
+  <div id="login-screen" class="min-h-screen flex items-center justify-center relative overflow-hidden bg-gradient-to-br from-poltera-dark via-slate-800 to-poltera-navy p-4">
+    <div class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md text-center relative z-10">
+      <div class="mb-8">
+        <h1 class="text-3xl font-extrabold text-poltera-navy tracking-tight uppercase">E-LEGALISIR</h1>
+        <p class="text-xs font-semibold text-slate-400 mt-1 uppercase tracking-wider">Politeknik Negeri Madura</p>
+      </div>
+
+      <div id="role-selection-section" class="space-y-3.5">
+        <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider text-left pl-1 border-b border-slate-100 pb-2">Pilih Portal Akses:</p>
+        <button onclick="bukaFormKredensial('Alumni')" class="w-full flex items-center justify-between p-4 bg-slate-50 hover:bg-blue-50/80 border border-slate-200 rounded-xl text-left transition group">
+          <div class="flex items-center gap-3.5">
+            <div class="w-10 h-10 rounded-lg bg-blue-100 text-poltera-navy flex items-center justify-center text-lg"><i class="fas fa-user-graduate"></i></div>
+            <div><p class="font-bold text-sm text-slate-700">Alumni</p><p class="text-[10px] text-slate-400">Login dengan NIM Anda</p></div>
+          </div>
+        </button>
+        <button onclick="bukaFormKredensial('Admin')" class="w-full flex items-center justify-between p-4 bg-slate-50 hover:bg-emerald-50 border border-slate-200 rounded-xl text-left transition group">
+          <div class="flex items-center gap-3.5">
+            <div class="w-10 h-10 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center text-lg"><i class="fas fa-user-shield"></i></div>
+            <div><p class="font-bold text-sm text-slate-700">Admin BAAK / Keuangan</p><p class="text-[10px] text-slate-400">Verifikasi Dokumen & Pembayaran</p></div>
+          </div>
+        </button>
+      </div>
+
+      <div id="credential-form-section" class="hide space-y-4 text-left border border-slate-100 p-5 rounded-2xl bg-slate-50/50">
+        <div class="flex items-center gap-2 mb-2">
+          <button onclick="kembaliKePilihanRole()" class="text-slate-400 hover:text-poltera-navy"><i class="fas fa-arrow-left"></i></button>
+          <span class="text-xs font-bold text-slate-500 uppercase tracking-widest" id="target-portal-label">Portal Login</span>
+        </div>
+        <form onsubmit="prosesVerifikasiKredensial(event)">
+          <div class="space-y-1 mb-3">
+            <label class="block text-[11px] font-bold text-slate-500 uppercase" id="label-username">NIM</label>
+            <input type="text" id="auth-username" required class="w-full px-4 py-3 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+          </div>
+          <div class="space-y-1 mb-4 hide" id="password-field-container">
+            <label class="block text-[11px] font-bold text-slate-500 uppercase">Kata Sandi</label>
+            <input type="password" id="auth-password" class="w-full px-4 py-3 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+          </div>
+          <button type="submit" id="btnLogin" class="w-full bg-poltera-navy text-white text-xs font-bold py-3.5 rounded-xl shadow-md">Masuk ke Sistem</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- APLIKASI UTAMA -->
+  <div id="app-screen" class="hide flex h-screen overflow-hidden">
+    <!-- Sidebar -->
+    <aside class="w-64 bg-poltera-dark text-slate-200 flex flex-col z-50 shadow-2xl h-full border-r border-slate-800">
+      <div class="h-16 flex items-center justify-center gap-3 border-b border-slate-800 bg-slate-900/50">
+        <span class="font-extrabold text-white tracking-widest uppercase text-lg">E-LEGALISIR</span>
+      </div>
+      <div class="p-4 border-b border-slate-800 bg-slate-950/40 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-full bg-poltera-accent text-white flex items-center justify-center font-bold" id="nav-initial">U</div>
+        <div class="overflow-hidden">
+          <p class="text-xs font-bold text-white truncate" id="nav-user-name">User Name</p>
+          <p class="text-[9px] text-slate-400 uppercase tracking-widest font-semibold" id="nav-user-role">Role</p>
+        </div>
+      </div>
+      <nav class="flex-1 p-4 space-y-2 overflow-y-auto" id="nav-menu"></nav>
+      <div class="p-4 border-t border-slate-800">
+        <button onclick="window.location.reload()" class="w-full py-2.5 bg-red-600/10 hover:bg-red-600 text-red-400 hover:text-white rounded-xl text-xs font-bold transition">Keluar Aplikasi</button>
+      </div>
+    </aside>
+
+    <!-- Konten -->
+    <main class="flex-1 flex flex-col h-screen overflow-hidden w-full relative bg-slate-50">
+      <header class="bg-white border-b px-6 py-4 flex justify-between items-center shadow-sm">
+        <h3 class="text-lg font-bold text-slate-800" id="header-title">Dashboard</h3>
+      </header>
+      <div class="flex-1 overflow-y-auto p-6" id="view-wrapper"></div>
+    </main>
+  </div>
+
+  <!-- TEMPLATE 1: DASHBOARD UMUM (Bisa Dipakai Admin & Alumni) -->
+  <template id="view-dashboard">
+    <div class="space-y-6">
+      
+      <!-- Profil Alumni (Hanya Muncul Jika Alumni) -->
+      <div id="profil-alumni" class="bg-white border p-5 rounded-2xl shadow-sm flex flex-col md:flex-row gap-6 items-center hide">
+        <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-2xl"><i class="fas fa-graduation-cap"></i></div>
+        <div class="flex-1 w-full grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+          <div><p class="text-slate-400 text-[10px] uppercase font-bold">NIM</p><p class="font-bold text-slate-700" id="lbl-nim"></p></div>
+          <div><p class="text-slate-400 text-[10px] uppercase font-bold">Nama Lengkap</p><p class="font-bold text-slate-700" id="lbl-nama"></p></div>
+          <div><p class="text-slate-400 text-[10px] uppercase font-bold">Prodi / Jurusan</p><p class="font-bold text-slate-700" id="lbl-prodi"></p></div>
+          <div><p class="text-slate-400 text-[10px] uppercase font-bold">Tahun Lulus</p><p class="font-bold text-slate-700" id="lbl-tahun"></p></div>
+        </div>
+      </div>
+
+      <!-- 4 Kartu Metrik -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="bg-white p-5 rounded-2xl border shadow-sm flex items-center gap-4">
+          <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl"><i class="fas fa-file-alt"></i></div>
+          <div><p class="text-[10px] font-bold text-slate-400">Total Pengajuan</p><p class="text-2xl font-bold text-slate-800" id="stat-total">0</p></div>
+        </div>
+        <div class="bg-white p-5 rounded-2xl border shadow-sm flex items-center gap-4">
+          <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl"><i class="fas fa-clock"></i></div>
+          <div><p class="text-[10px] font-bold text-slate-400">Menunggu Verifikasi</p><p class="text-2xl font-bold text-slate-800" id="stat-pending">0</p></div>
+        </div>
+        <div class="bg-white p-5 rounded-2xl border shadow-sm flex items-center gap-4">
+          <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl"><i class="fas fa-check"></i></div>
+          <div><p class="text-[10px] font-bold text-slate-400">Selesai / Disetujui</p><p class="text-2xl font-bold text-slate-800" id="stat-done">0</p></div>
+        </div>
+        <div class="bg-white p-5 rounded-2xl border shadow-sm flex items-center gap-4">
+          <div class="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center text-xl"><i class="fas fa-times"></i></div>
+          <div><p class="text-[10px] font-bold text-slate-400">Ditolak</p><p class="text-2xl font-bold text-slate-800" id="stat-rejected">0</p></div>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <!-- TEMPLATE 2: FORM PENGAJUAN (Hanya Alumni) -->
+  <template id="view-pengajuan">
+    <div class="bg-white rounded-2xl border p-6 shadow-sm max-w-3xl">
+      <form id="formPengajuan" onsubmit="submitForm(event)" class="space-y-5">
+        <h3 class="font-bold text-poltera-navy border-b pb-2">1. Upload Dokumen (Max 1MB, JPG/PNG)</h3>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-500 mb-1">Upload Ijazah</label>
+            <input type="file" id="fileIjazah" accept="image/png, image/jpeg" class="w-full border p-2 text-xs rounded-xl" onchange="checkSize(this)">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-500 mb-1">Jumlah Ijazah</label>
+            <input type="number" id="jmlIjazah" value="0" min="0" class="w-full border rounded-xl p-2 text-sm" onchange="hitungTotal()">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-500 mb-1">Upload Transkrip</label>
+            <input type="file" id="fileTranskrip" accept="image/png, image/jpeg" class="w-full border p-2 text-xs rounded-xl" onchange="checkSize(this)">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-500 mb-1">Jumlah Transkrip</label>
+            <input type="number" id="jmlTranskrip" value="0" min="0" class="w-full border rounded-xl p-2 text-sm" onchange="hitungTotal()">
+          </div>
+        </div>
+
+        <h3 class="font-bold text-poltera-navy border-b pb-2 mt-6">2. Pembayaran</h3>
+        <div class="bg-yellow-50 p-4 rounded-xl border border-yellow-200">
+          <p class="text-xs text-gray-600">Total Tagihan:</p>
+          <p class="text-2xl font-bold text-rose-600" id="lblTotal">Rp 0</p>
+          <p class="text-xs font-bold mt-2">Transfer ke: <span id="lblBank" class="text-blue-800"></span></p>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-500 mb-1">Upload Bukti Bayar *</label>
+          <input type="file" id="fileBukti" accept="image/png, image/jpeg" required class="w-full border p-2 text-xs rounded-xl" onchange="checkSize(this)">
+        </div>
+
+        <h3 class="font-bold text-poltera-navy border-b pb-2 mt-6">3. Kontak & Pengiriman</h3>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-500 mb-1">No. WhatsApp *</label>
+            <input type="text" id="noHp" required oninput="this.value = this.value.replace(/[^0-9]/g, '')" placeholder="08..." class="w-full border rounded-xl p-2 text-sm">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-500 mb-1">Metode Pengambilan *</label>
+            <select id="metode" onchange="toggleAlamat()" class="w-full border rounded-xl p-2 text-sm bg-white">
+              <option value="Ambil di POLTERA">Ambil di POLTERA</option>
+              <option value="Ekspedisi COD">Dikirim (Ekspedisi COD)</option>
+            </select>
+          </div>
+        </div>
         
-        <!-- Header -->
-        <div class="bg-blue-800 text-white p-4 text-center">
-            <h1 class="text-xl font-bold">E-Legalisir POLTERA</h1>
+        <div id="alamat-container" class="hide">
+          <label class="block text-xs font-bold text-slate-500 mb-1">Alamat Lengkap Pengiriman *</label>
+          <textarea id="alamat" rows="2" class="w-full border rounded-xl p-2 text-sm focus:outline-none focus:ring-1" placeholder="Masukkan alamat lengkap RT/RW, Desa, Kecamatan..."></textarea>
         </div>
 
-        <!-- Section Login -->
-        <div id="section-login" class="p-6">
-            <h2 class="text-lg font-semibold mb-4 text-gray-700">Login Alumni</h2>
-            <div class="mb-4">
-                <label class="block text-sm mb-1 text-gray-600">NIM</label>
-                <input type="text" id="nim" class="w-full border rounded p-2 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Masukkan NIM Anda">
-            </div>
-            <!-- Catatan: Untuk captcha, Anda bisa integrasikan Google reCAPTCHA di sini -->
-            <button onclick="login()" id="btnLogin" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition">Cek Data Alumni</button>
+        <div class="border-t pt-4">
+          <button type="submit" id="btnSubmit" class="bg-emerald-600 text-white px-6 py-3 rounded-xl font-bold text-sm w-full md:w-auto"><i class="fas fa-paper-plane mr-2"></i> Kirim Pengajuan</button>
         </div>
+      </form>
+    </div>
+  </template>
 
-        <!-- Section Form Pengajuan -->
-        <div id="section-form" class="p-6 hidden">
-            <div class="bg-blue-50 p-3 rounded mb-4 text-sm">
-                <p><strong>Nama:</strong> <span id="lblNama"></span></p>
-                <p><strong>Prodi:</strong> <span id="lblProdi"></span> (<span id="lblTahun"></span>)</p>
-            </div>
+  <!-- TEMPLATE 3: TABEL DATA (Riwayat Alumni & Tabel Admin) -->
+  <template id="view-tabel">
+    <div class="bg-white rounded-2xl border shadow-sm flex flex-col">
+      <div class="p-4 border-b bg-slate-50"><h4 class="font-bold">Daftar Data Pengajuan</h4></div>
+      <div class="overflow-x-auto p-4">
+        <table class="w-full text-left text-sm whitespace-nowrap">
+          <thead><tr class="bg-slate-100 text-slate-500 text-xs uppercase"><th class="p-3">Tanggal / Nama</th><th class="p-3">Dokumen</th><th class="p-3 text-center">Status Saat Ini</th><th class="p-3 text-center">Aksi / Tindakan</th></tr></thead>
+          <tbody id="table-body" class="divide-y divide-slate-100"></tbody>
+        </table>
+      </div>
+    </div>
+  </template>
 
-            <form id="formPengajuan">
-                <h3 class="font-bold text-gray-700 border-b pb-1 mb-3">1. Upload Dokumen (Max 1MB, JPG/PNG)</h3>
-                
-                <label class="block text-sm mb-1 text-gray-600">Upload Ijazah</label>
-                <input type="file" id="fileIjazah" accept="image/png, image/jpeg" class="w-full border p-1 text-sm mb-2" onchange="checkSize(this)">
-                <label class="block text-sm mb-1 text-gray-600">Jumlah Legalisir Ijazah</label>
-                <input type="number" id="jmlIjazah" value="0" min="0" class="w-full border rounded p-2 mb-4" onchange="hitungTotal()">
-
-                <label class="block text-sm mb-1 text-gray-600">Upload Transkrip</label>
-                <input type="file" id="fileTranskrip" accept="image/png, image/jpeg" class="w-full border p-1 text-sm mb-2" onchange="checkSize(this)">
-                <label class="block text-sm mb-1 text-gray-600">Jumlah Legalisir Transkrip</label>
-                <input type="number" id="jmlTranskrip" value="0" min="0" class="w-full border rounded p-2 mb-4" onchange="hitungTotal()">
-
-                <h3 class="font-bold text-gray-700 border-b pb-1 mb-3">2. Pembayaran</h3>
-                <div class="bg-yellow-50 p-3 rounded mb-3 border border-yellow-200">
-                    <p class="text-sm">Total Tagihan: <br><strong class="text-xl text-red-600" id="lblTotal">Rp 0</strong></p>
-                    <p class="text-xs text-gray-600 mt-2">Transfer ke:<br><strong id="lblBank">...</strong><br>A.N. <strong id="lblAtasNama">...</strong></p>
-                </div>
-
-                <label class="block text-sm mb-1 text-gray-600">Upload Bukti Bayar</label>
-                <input type="file" id="fileBukti" accept="image/png, image/jpeg" class="w-full border p-1 text-sm mb-4" onchange="checkSize(this)">
-
-                <h3 class="font-bold text-gray-700 border-b pb-1 mb-3">3. Pengiriman & Kontak</h3>
-                <label class="block text-sm mb-1 text-gray-600">No. WhatsApp / HP</label>
-                <input type="text" id="noHp" class="w-full border rounded p-2 mb-3" placeholder="08...">
-
-                <label class="block text-sm mb-1 text-gray-600">Metode Pengambilan</label>
-                <select id="metode" class="w-full border rounded p-2 mb-6">
-                    <option value="Ambil di POLTERA">Ambil di POLTERA</option>
-                    <option value="Ekspedisi COD">Dikirim (Ekspedisi COD)</option>
-                </select>
-
-                <button type="button" onclick="submitForm()" id="btnSubmit" class="w-full bg-green-600 text-white py-3 rounded font-bold hover:bg-green-700 transition">Kirim Pengajuan</button>
-            </form>
+  <!-- MODAL TOLAK (Untuk Admin) -->
+  <div id="modalTolak" class="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center hide p-4">
+    <div class="bg-white rounded-2xl w-full max-w-md shadow-2xl p-5">
+        <h4 class="font-bold mb-4">Alasan Penolakan</h4>
+        <textarea id="alasanTolak" rows="3" class="w-full border rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-rose-500" placeholder="Masukkan alasan kenapa ditolak..."></textarea>
+        <div class="flex justify-end gap-2 mt-4">
+            <button onclick="document.getElementById('modalTolak').classList.add('hide')" class="px-4 py-2 border rounded-xl text-sm font-bold">Batal</button>
+            <button onclick="prosesTolak()" class="px-4 py-2 bg-rose-600 text-white rounded-xl text-sm font-bold">Kirim Penolakan</button>
         </div>
     </div>
+  </div>
 
-    <script>
-        // GANTI DENGAN URL WEB APP GOOGLE APPS SCRIPT ANDA
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbwTKcKIeh5PM3VHm8fBQjSRm06NiJflI7xg4DNqosajObCCmb3TmizO-zL6XjgYigQN/exec"; 
+  <script>
+    // -------------------------------------------------------------
+    // WAJIB: GANTI DENGAN URL WEB APP GOOGLE APPS SCRIPT ANDA!!!
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbwTKcKIeh5PM3VHm8fBQjSRm06NiJflI7xg4DNqosajObCCmb3TmizO-zL6XjgYigQN/exec"; 
+    // -------------------------------------------------------------
+
+    let state = { role: null, user: null, db: [], pengaturan: {}, selectedRow: 0 };
+    let selectedAuth = '';
+
+    function bukaFormKredensial(role) {
+      selectedAuth = role;
+      document.getElementById('role-selection-section').classList.add('hide');
+      document.getElementById('credential-form-section').classList.remove('hide');
+      document.getElementById('label-username').innerText = role === 'Alumni' ? 'NIM Anda' : 'Username Admin';
+      document.getElementById('auth-username').value = '';
+      
+      if(role === 'Alumni') {
+        document.getElementById('password-field-container').classList.add('hide');
+        document.getElementById('auth-password').removeAttribute('required');
+      } else {
+        document.getElementById('password-field-container').classList.remove('hide');
+        document.getElementById('auth-password').setAttribute('required', 'true');
+      }
+    }
+    function kembaliKePilihanRole() { document.getElementById('credential-form-section').classList.add('hide'); document.getElementById('role-selection-section').classList.remove('hide'); }
+
+    async function prosesVerifikasiKredensial(e) {
+      e.preventDefault();
+      const userVal = document.getElementById('auth-username').value;
+      const passVal = document.getElementById('auth-password').value;
+      const btn = document.getElementById('btnLogin');
+      btn.innerText = "Memverifikasi..."; btn.disabled = true;
+
+      try {
+        let url = selectedAuth === 'Alumni' 
+          ? `${GAS_URL}?action=loginAlumni&nim=${userVal}`
+          : `${GAS_URL}?action=loginAdmin&username=${userVal}&password=${passVal}`;
+
+        const res = await fetch(url, {method: 'POST', redirect: 'follow'});
+        const json = await res.json();
+
+        if (json.status === 'success') {
+          state.user = json.data;
+          state.role = selectedAuth === 'Alumni' ? 'Alumni' : json.data.role; // Alumni, BAAK, atau Keuangan
+          if(json.pengaturan) state.pengaturan = json.pengaturan;
+          
+          document.getElementById('nav-user-name').innerText = state.user.nama;
+          document.getElementById('nav-user-role').innerText = state.role;
+          document.getElementById('nav-initial').innerText = state.user.nama.charAt(0);
+          
+          buildMenu();
+          await fetchTableData();
+          
+          document.getElementById('login-screen').classList.add('hide');
+          document.getElementById('app-screen').classList.remove('hide');
+          changeView('dashboard');
+        } else {
+          Swal.fire('Gagal', json.message, 'error');
+        }
+      } catch(err) { Swal.fire('Error', 'Gagal koneksi ke server.', 'error'); }
+      
+      btn.innerText = "Masuk ke Sistem"; btn.disabled = false;
+    }
+
+    function buildMenu() {
+      let nav = `<button onclick="changeView('dashboard')" class="w-full text-left px-4 py-3 rounded-xl text-sm font-bold text-slate-400 hover:bg-slate-800 hover:text-white mb-2"><i class="fas fa-home w-5"></i> Dashboard</button>`;
+      if(state.role === 'Alumni') {
+        nav += `<button onclick="changeView('pengajuan')" class="w-full text-left px-4 py-3 rounded-xl text-sm font-bold text-slate-400 hover:bg-slate-800 hover:text-white mb-2"><i class="fas fa-edit w-5"></i> Ajukan Legalisir</button>`;
+      }
+      nav += `<button onclick="changeView('tabel')" class="w-full text-left px-4 py-3 rounded-xl text-sm font-bold text-slate-400 hover:bg-slate-800 hover:text-white"><i class="fas fa-list w-5"></i> Data Tabel</button>`;
+      document.getElementById('nav-menu').innerHTML = nav;
+    }
+
+    function changeView(view) {
+      document.getElementById('view-wrapper').innerHTML = '';
+      document.getElementById('view-wrapper').appendChild(document.getElementById(`view-${view}`).content.cloneNode(true));
+
+      if (view === 'dashboard') {
+        document.getElementById('header-title').innerText = "Dashboard Analitik";
+        document.getElementById('stat-total').innerText = state.db.length;
+        document.getElementById('stat-pending').innerText = state.db.filter(d => d.status.includes('Menunggu')).length;
+        document.getElementById('stat-done').innerText = state.db.filter(d => d.status === 'Selesai').length;
+        document.getElementById('stat-rejected').innerText = state.db.filter(d => d.status === 'Ditolak').length;
+
+        if (state.role === 'Alumni') {
+          document.getElementById('profil-alumni').classList.remove('hide');
+          document.getElementById('lbl-nim').innerText = state.user.nim;
+          document.getElementById('lbl-nama').innerText = state.user.nama;
+          document.getElementById('lbl-prodi').innerText = `${state.user.jurusan} - ${state.user.prodi}`;
+          document.getElementById('lbl-tahun').innerText = state.user.tahunLulus;
+        }
+      } else if (view === 'pengajuan') {
+        document.getElementById('header-title').innerText = "Buat Pengajuan Baru";
+        document.getElementById('lblBank').innerText = `${state.pengaturan.bank} - ${state.pengaturan.rekening} (A.N. ${state.pengaturan.atasNama})`;
+      } else if (view === 'tabel') {
+        document.getElementById('header-title').innerText = "Daftar Data";
+        renderTable();
+      }
+    }
+
+    async function fetchTableData() {
+      const res = await fetch(`${GAS_URL}?action=getPengajuan&role=${state.role}&nim=${state.user.nim || ''}`, {method: 'POST'});
+      const json = await res.json();
+      if(json.status === 'success') state.db = json.data;
+    }
+
+    function renderTable() {
+      let html = '';
+      if(state.db.length === 0) html = `<tr><td colspan="4" class="p-6 text-center text-slate-500">Belum ada data...</td></tr>`;
+      
+      state.db.forEach(d => {
+        let statusBadge = `<span class="bg-amber-100 text-amber-700 px-2 py-1 rounded text-xs font-bold">${d.status}</span>`;
+        if(d.status === "Selesai") statusBadge = `<span class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded text-xs font-bold">${d.status}</span>`;
+        if(d.status === "Ditolak") statusBadge = `<span class="bg-rose-100 text-rose-700 px-2 py-1 rounded text-xs font-bold">${d.status}</span><br><span class="text-[10px] text-rose-500">${d.keterangan || ''}</span>`;
         
-        let globalData = {};
-        let pengaturan = { biaya: 0 };
+        let docs = '';
+        if(d.linkIjazah) docs += `<a href="${d.linkIjazah}" target="_blank" class="text-blue-500 hover:underline text-xs block">Ijazah (${d.jmlIjazah})</a>`;
+        if(d.linkTranskrip) docs += `<a href="${d.linkTranskrip}" target="_blank" class="text-blue-500 hover:underline text-xs block">Transkrip (${d.jmlTranskrip})</a>`;
+        if(d.linkBukti) docs += `<a href="${d.linkBukti}" target="_blank" class="text-emerald-600 hover:underline text-xs font-bold block mt-1">Bukti (Rp ${d.totalBiaya.toLocaleString('id-ID')})</a>`;
 
-        async function login() {
-            const nim = document.getElementById('nim').value;
-            if(!nim) return Swal.fire('Error', 'NIM harus diisi!', 'error');
-
-            document.getElementById('btnLogin').innerText = "Loading...";
-            
-            try {
-                // Fetch Login
-                const res = await fetch(`${GAS_URL}?action=login&nim=${nim}`, { method: 'POST' });
-                const json = await res.json();
-                
-                if(json.status === "success") {
-                    globalData = json.data;
-                    document.getElementById('lblNama').innerText = globalData.nama;
-                    document.getElementById('lblProdi').innerText = globalData.prodi;
-                    document.getElementById('lblTahun').innerText = globalData.tahunLulus;
-                    
-                    // Fetch Pengaturan
-                    const resPengaturan = await fetch(`${GAS_URL}?action=getPengaturan`, { method: 'POST' });
-                    const jsonPeng = await resPengaturan.json();
-                    
-                    if(jsonPeng.status === "success") {
-                        pengaturan.biaya = parseInt(jsonPeng.data.biayaPerLembar);
-                        document.getElementById('lblBank').innerText = `${jsonPeng.data.namaBank} - ${jsonPeng.data.noRekening}`;
-                        document.getElementById('lblAtasNama').innerText = jsonPeng.data.atasNama;
-                        
-                        document.getElementById('section-login').classList.add('hidden');
-                        document.getElementById('section-form').classList.remove('hidden');
-                    }
-                } else {
-                    Swal.fire('Gagal', json.message, 'error');
-                }
-            } catch (err) {
-                Swal.fire('Error', 'Gagal koneksi ke server.', 'error');
-            }
-            document.getElementById('btnLogin').innerText = "Cek Data Alumni";
+        let btnAksi = `<span class="text-xs text-slate-400">Tidak ada aksi</span>`;
+        
+        // Logika Tombol Sesuai Role (Data tidak hilang, hanya tombol yang berubah)
+        if (state.role === 'BAAK') {
+          if (d.status === 'Menunggu BAAK') {
+            btnAksi = `
+              <button onclick="actionStatus(${d.rowIndex}, 'Menunggu Keuangan')" class="bg-blue-600 text-white px-2 py-1 rounded text-xs block w-full mb-1">Setuju, Kirim ke Keuangan</button>
+              <button onclick="openTolak(${d.rowIndex})" class="bg-rose-500 text-white px-2 py-1 rounded text-xs block w-full">Tolak Berkas</button>`;
+          } else if (d.status === 'Proses BAAK') {
+            btnAksi = `<button onclick="actionStatus(${d.rowIndex}, 'Selesai')" class="bg-emerald-600 text-white px-2 py-1 rounded text-xs block w-full">Tandai Selesai</button>`;
+          }
+        } 
+        else if (state.role === 'Keuangan' && d.status === 'Menunggu Keuangan') {
+          btnAksi = `
+            <button onclick="actionStatus(${d.rowIndex}, 'Proses BAAK')" class="bg-blue-600 text-white px-2 py-1 rounded text-xs block w-full mb-1">Bukti Valid, Kembalikan ke BAAK</button>
+            <button onclick="openTolak(${d.rowIndex})" class="bg-rose-500 text-white px-2 py-1 rounded text-xs block w-full">Tolak Bukti Bayar</button>`;
         }
 
-        function checkSize(input) {
-            if (input.files.length > 0) {
-                const fileSize = input.files[0].size / 1024 / 1024; // in MB
-                if (fileSize > 1) {
-                    Swal.fire('Peringatan', 'Ukuran file maksimal 1 MB!', 'warning');
-                    input.value = ''; // Reset
-                }
-            }
+        html += `
+          <tr class="border-b hover:bg-slate-50">
+            <td class="p-3">
+              <p class="font-bold text-slate-800">${d.nama}</p>
+              <p class="text-[10px] text-slate-500">${d.nim} | ${d.metode}</p>
+              <p class="text-[10px] text-slate-400 mt-1">${new Date(d.timestamp).toLocaleString('id-ID')}</p>
+            </td>
+            <td class="p-3">${docs}</td>
+            <td class="p-3 text-center">${statusBadge}</td>
+            <td class="p-3 w-40 text-center">${btnAksi}</td>
+          </tr>`;
+      });
+      document.getElementById('table-body').innerHTML = html;
+    }
+
+    function checkSize(input) { if (input.files[0] && input.files[0].size > 1048576) { Swal.fire('Error', 'Max 1MB', 'warning'); input.value = ''; } }
+    function toggleAlamat() { document.getElementById('alamat-container').classList.toggle('hide', document.getElementById('metode').value !== 'Ekspedisi COD'); }
+    function hitungTotal() {
+      const total = ((parseInt(document.getElementById('jmlIjazah').value)||0) + (parseInt(document.getElementById('jmlTranskrip').value)||0)) * state.pengaturan.biaya;
+      document.getElementById('lblTotal').innerText = `Rp ${total.toLocaleString('id-ID')}`; return total;
+    }
+
+    const getBase64 = (file) => new Promise((resolve) => { if(!file) resolve(null); else { const r = new FileReader(); r.readAsDataURL(file); r.onload = () => resolve(r.result); } });
+
+    async function submitForm(e) {
+      e.preventDefault();
+      const jIjazah = parseInt(document.getElementById('jmlIjazah').value)||0; const jTranskrip = parseInt(document.getElementById('jmlTranskrip').value)||0;
+      if(jIjazah === 0 && jTranskrip === 0) return Swal.fire('Error', 'Pilih minimal 1 dokumen!', 'error');
+      
+      const fileBukti = document.getElementById('fileBukti').files[0];
+      const metode = document.getElementById('metode').value;
+      const alamat = document.getElementById('alamat').value;
+      
+      if(metode === 'Ekspedisi COD' && !alamat) return Swal.fire('Error', 'Alamat wajib diisi untuk Ekspedisi!', 'error');
+
+      const btn = document.getElementById('btnSubmit'); btn.innerText = "Mengunggah Dokumen..."; btn.disabled = true;
+      
+      try {
+        const payload = {
+          nim: state.user.nim, nama: state.user.nama, prodi: state.user.prodi, noHp: document.getElementById('noHp').value,
+          jmlIjazah: jIjazah, jmlTranskrip: jTranskrip, totalBiaya: hitungTotal(), metode: metode, alamat: alamat,
+          fileIjazah: await getBase64(document.getElementById('fileIjazah').files[0]),
+          fileTranskrip: await getBase64(document.getElementById('fileTranskrip').files[0]),
+          fileBukti: await getBase64(fileBukti)
+        };
+        await fetch(`${GAS_URL}?action=submit`, { method: 'POST', body: JSON.stringify(payload) });
+        Swal.fire('Sukses', 'Berhasil diajukan', 'success');
+        await fetchTableData(); changeView('tabel');
+      } catch(e) { Swal.fire('Error', 'Gagal kirim', 'error'); }
+    }
+
+    async function actionStatus(rowIndex, statusBaru) {
+      const item = state.db.find(d => d.rowIndex === rowIndex);
+      Swal.fire({ title: 'Konfirmasi', text: `Ubah status ke ${statusBaru}?`, showCancelButton: true }).then(async (res) => {
+        if(res.isConfirmed) {
+          Swal.fire({title: 'Memproses...', didOpen: () => Swal.showLoading()});
+          await fetch(`${GAS_URL}?action=updateStatus`, { method: 'POST', body: JSON.stringify({rowIndex, statusBaru, noHp: item.noHp, nama: item.nama, metode: item.metode}) });
+          await fetchTableData(); renderTable(); Swal.close();
         }
+      });
+    }
 
-        function hitungTotal() {
-            const jIjazah = parseInt(document.getElementById('jmlIjazah').value) || 0;
-            const jTranskrip = parseInt(document.getElementById('jmlTranskrip').value) || 0;
-            const total = (jIjazah + jTranskrip) * pengaturan.biaya;
-            document.getElementById('lblTotal').innerText = `Rp ${total.toLocaleString('id-ID')}`;
-            return total;
-        }
-
-        const getBase64 = (file) => new Promise((resolve, reject) => {
-            if(!file) return resolve(null);
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = () => resolve(reader.result);
-            reader.onerror = error => reject(error);
-        });
-
-        async function submitForm() {
-            const jIjazah = parseInt(document.getElementById('jmlIjazah').value) || 0;
-            const jTranskrip = parseInt(document.getElementById('jmlTranskrip').value) || 0;
-            const totalBiaya = hitungTotal();
-            const noHp = document.getElementById('noHp').value;
-            const fileBukti = document.getElementById('fileBukti').files[0];
-            const fileIjazah = document.getElementById('fileIjazah').files[0];
-            const fileTranskrip = document.getElementById('fileTranskrip').files[0];
-            const metode = document.getElementById('metode').value;
-
-            if(jIjazah === 0 && jTranskrip === 0) return Swal.fire('Error', 'Pilih minimal 1 dokumen untuk dilegalisir', 'error');
-            if(!fileBukti) return Swal.fire('Error', 'Upload Bukti Bayar wajib diisi!', 'error');
-            if(!noHp) return Swal.fire('Error', 'Nomor WA wajib diisi!', 'error');
-
-            document.getElementById('btnSubmit').innerText = "Mengirim Data... (Tunggu Sesaat)";
-            document.getElementById('btnSubmit').disabled = true;
-
-            try {
-                const b64Ijazah = await getBase64(fileIjazah);
-                const b64Transkrip = await getBase64(fileTranskrip);
-                const b64Bukti = await getBase64(fileBukti);
-
-                const payload = {
-                    nim: globalData.nim,
-                    nama: globalData.nama,
-                    noHp: noHp,
-                    jmlIjazah: jIjazah,
-                    jmlTranskrip: jTranskrip,
-                    totalBiaya: totalBiaya,
-                    metode: metode,
-                    fileIjazah: b64Ijazah,
-                    fileTranskrip: b64Transkrip,
-                    fileBukti: b64Bukti
-                };
-
-                const res = await fetch(`${GAS_URL}?action=submit`, {
-                    method: 'POST',
-                    body: JSON.stringify(payload)
-                });
-                
-                const json = await res.json();
-                
-                if(json.status === "success") {
-                    Swal.fire('Berhasil!', 'Pengajuan berhasil dikirim, cek WA secara berkala.', 'success').then(() => {
-                        window.location.reload();
-                    });
-                } else {
-                    Swal.fire('Gagal', json.message, 'error');
-                }
-            } catch (err) {
-                Swal.fire('Error', 'Terjadi kesalahan saat upload data.', 'error');
-            }
-            
-            document.getElementById('btnSubmit').innerText = "Kirim Pengajuan";
-            document.getElementById('btnSubmit').disabled = false;
-        }
-    </script>
+    function openTolak(rowIndex) { state.selectedRow = rowIndex; document.getElementById('alasanTolak').value = ''; document.getElementById('modalTolak').classList.remove('hide'); }
+    async function prosesTolak() {
+      const alasan = document.getElementById('alasanTolak').value;
+      if(!alasan) return alert('Isi alasan!');
+      document.getElementById('modalTolak').classList.add('hide');
+      Swal.fire({title: 'Menolak...', didOpen: () => Swal.showLoading()});
+      
+      const item = state.db.find(d => d.rowIndex === state.selectedRow);
+      await fetch(`${GAS_URL}?action=updateStatus`, { method: 'POST', body: JSON.stringify({rowIndex: item.rowIndex, statusBaru: 'Ditolak', keteranganTolak: alasan, noHp: item.noHp, nama: item.nama}) });
+      await fetchTableData(); renderTable(); Swal.close();
+    }
+  </script>
 </body>
 </html>
