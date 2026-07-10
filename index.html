@@ -16,7 +16,6 @@
 </head>
 <body class="text-slate-800">
 
-  <!-- HALAMAN LOGIN -->
   <div id="login-screen" class="min-h-screen flex items-center justify-center relative overflow-hidden bg-gradient-to-br from-poltera-dark via-slate-800 to-poltera-navy p-4 z-50">
     <div class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md text-center">
       <div class="mb-8">
@@ -49,13 +48,9 @@
     </div>
   </div>
 
-  <!-- APLIKASI UTAMA -->
   <div id="app-screen" class="hide flex h-screen overflow-hidden relative">
-    
-    <!-- FIX: Overlay untuk HP otomatis tutup sidebar -->
     <div id="sidebar-overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-slate-900/60 z-40 hidden md:hidden transition-opacity opacity-0 backdrop-blur-sm"></div>
 
-    <!-- FIX: Sidebar Class disesuaikan untuk Responsif -->
     <aside id="main-sidebar" class="w-64 bg-poltera-dark text-slate-200 flex flex-col z-50 shadow-2xl h-full border-r border-slate-800 absolute md:relative inset-y-0 left-0 transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out">
       <button onclick="toggleSidebar()" class="md:hidden absolute top-4 right-4 text-slate-400 hover:text-white w-8 h-8 bg-slate-800 rounded-lg flex items-center justify-center"><i class="fas fa-times"></i></button>
       
@@ -75,7 +70,6 @@
 
     <main class="flex-1 flex flex-col h-screen overflow-hidden w-full relative bg-slate-50">
       <header class="bg-white border-b px-4 md:px-6 py-4 flex items-center gap-4 shadow-sm z-10">
-        <!-- FIX: Tombol Hamburger Menu -->
         <button onclick="toggleSidebar()" class="md:hidden text-slate-500 hover:text-poltera-navy w-10 h-10 rounded-xl bg-slate-50 border flex items-center justify-center"><i class="fas fa-bars"></i></button>
         <h3 class="text-lg font-bold text-slate-800" id="header-title">Dashboard</h3>
       </header>
@@ -162,7 +156,6 @@
     </div>
   </template>
 
-  <!-- MODAL TOLAK -->
   <div id="modalTolak" class="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center hide p-4">
     <div class="bg-white rounded-2xl w-full max-w-sm shadow-2xl p-5">
         <h4 class="font-bold mb-4">Alasan Penolakan</h4>
@@ -175,25 +168,20 @@
   </div>
 
   <script>
-    // -------------------------------------------------------------
-    // WAJIB: GANTI DENGAN URL WEB APP GOOGLE APPS SCRIPT ANDA!!!
     const GAS_URL = "https://script.google.com/macros/s/AKfycbwTKcKIeh5PM3VHm8fBQjSRm06NiJflI7xg4DNqosajObCCmb3TmizO-zL6XjgYigQN/exec"; 
-    // -------------------------------------------------------------
 
     let state = { role: null, user: null, db: [], pengaturan: {}, selectedRow: 0 };
     let selectedAuth = '';
 
-    // FIX: Core Fetch API Kuat & Anti-CORS Block (Wajib menggunakan headers text/plain)
     async function apiFetch(action, payload = null) {
       let options = { method: 'POST', redirect: 'follow', headers: { "Content-Type": "text/plain;charset=utf-8" } };
       if(payload) options.body = JSON.stringify(payload);
-      let url = payload ? `${GAS_URL}?action=${action}` : `${GAS_URL}?action=${action}`; // If GET params needed, format here.
+      let url = payload ? `${GAS_URL}?action=${action}` : `${GAS_URL}?action=${action}`; 
       
       const res = await fetch(url, options);
       return await res.json();
     }
 
-    // FIX: Togle Sidebar Mobile
     function toggleSidebar() {
       const sidebar = document.getElementById('main-sidebar');
       const overlay = document.getElementById('sidebar-overlay');
@@ -237,7 +225,8 @@
           document.getElementById('nav-user-name').innerText = state.user.nama; document.getElementById('nav-user-role').innerText = state.role;
           document.getElementById('nav-initial').innerText = state.user.nama.charAt(0);
           
-          buildMenu(); await fetchTableData();
+          buildMenu(); 
+          await fetchTableData();
           document.getElementById('login-screen').classList.add('hide'); document.getElementById('app-screen').classList.remove('hide');
           changeView('dashboard');
         } else Swal.fire('Gagal', json.message, 'error');
@@ -252,13 +241,21 @@
       document.getElementById('nav-menu').innerHTML = nav;
     }
 
-async function changeView(view) {
+    // FIX: fetchTableData kini sepenuhnya menggunakan apiFetch dengan aman
+    async function fetchTableData() {
+      try {
+        const res = await apiFetch('getPengajuan', { role: state.role, nim: state.user.nim });
+        if(res && res.status === 'success') state.db = res.data;
+      } catch (e) { console.error("Gagal menarik data"); }
+    }
+
+    // FIX: changeView kini memaksa refresh data setiap kali dibuka
+    async function changeView(view) {
       if(window.innerWidth < 768) { 
         const sb = document.getElementById('main-sidebar'); 
         if (!sb.classList.contains('-translate-x-full')) toggleSidebar(); 
       }
       
-      // FIX: Paksa aplikasi menarik data jika membuka Dashboard ATAU Tabel Data
       if (view === 'dashboard' || view === 'tabel') {
         await fetchTableData(); 
       }
@@ -289,24 +286,7 @@ async function changeView(view) {
         renderTable();
       }
     }
-    
-    //async function fetchTableData() {
-      //FIX: Menambahkan Header Bypass CORS agar aman di semua browser
-      //const res = await fetch(`${GAS_URL}?action=getPengajuan&role=${state.role}&nim=${state.user.nim || ''}`, { method: 'POST', redirect: 'follow', headers: { "Content-Type": "text/plain;charset=utf-8" }});
-     //const json = await res.json();
-     //if(json.status === 'success') state.db = json.data;
-   //}
 
-    async function fetchTableData() {
-      try {
-        // Menggunakan apiFetch agar data Role dan NIM dikirim terbungkus rapi
-        const res = await apiFetch('getPengajuan', { role: state.role, nim: state.user.nim });
-        if(res && res.status === 'success') state.db = res.data;
-      } catch (e) {
-        console.error("Gagal menarik data");
-      }
-    }
-    
     function renderTable() {
       let html = '';
       if(state.db.length === 0) html = `<tr><td colspan="4" class="p-8 text-center text-slate-500 font-bold">Belum ada data pengajuan...</td></tr>`;
@@ -344,7 +324,6 @@ async function changeView(view) {
       const fileBukti = document.getElementById('fileBukti').files[0]; const metode = document.getElementById('metode').value; const alamat = document.getElementById('alamat').value;
       if(metode === 'Ekspedisi COD' && !alamat) return Swal.fire('Error', 'Isi alamat tujuan kirim!', 'error');
 
-      // FIX: Pesan loading dioptimalkan
       Swal.fire({title: 'Mengunggah Data', html: 'Harap tunggu, proses ke server dapat memakan waktu 15 - 30 detik...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
       
       try {
@@ -355,7 +334,6 @@ async function changeView(view) {
       } catch(e) { Swal.fire('Error', 'Koneksi gagal saat upload', 'error'); }
     }
 
-    // FIX: Semua request WA Admin menggunakan apiFetch (Bypass CORS Aman)
     async function actionStatus(rowIndex, statusBaru) {
       const item = state.db.find(d => d.rowIndex === rowIndex);
       Swal.fire({ title: 'Setujui Berkas?', text: `Notifikasi WA otomatis dikirim ke ${item.nama}`, showCancelButton: true, confirmButtonText: 'Ya, Proses' }).then(async (res) => {
