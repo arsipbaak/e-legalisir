@@ -252,34 +252,47 @@
       document.getElementById('nav-menu').innerHTML = nav;
     }
 
-    function changeView(view) {
-      if(window.innerWidth < 768) { const sb = document.getElementById('main-sidebar'); if (!sb.classList.contains('-translate-x-full')) toggleSidebar(); }
-      
-      document.getElementById('view-wrapper').innerHTML = ''; document.getElementById('view-wrapper').appendChild(document.getElementById(`view-${view}`).content.cloneNode(true));
+    async function changeView(view) {
+  // 1. Menutup sidebar otomatis di Mobile
+  if(window.innerWidth < 768) { 
+    const sb = document.getElementById('main-sidebar'); 
+    if (!sb.classList.contains('-translate-x-full')) toggleSidebar(); 
+  }
+  
+  // 2. Jika Dashboard, pastikan tarik data terbaru DULU
+  if (view === 'dashboard') {
+    await fetchTableData(); // PENTING: Tunggu data sampai ada di state.db
+  }
 
-      if (view === 'dashboard') {
-        document.getElementById('header-title').innerText = "Dashboard Analitik";
-        // FIX: Karena state.db sudah difilter di Backend khusus Alumni, perhitungan length ini 100% akurat
-        document.getElementById('stat-total').innerText = state.db.length;
-        document.getElementById('stat-pending').innerText = state.db.filter(d => d.status.includes('Menunggu')).length;
-        document.getElementById('stat-done').innerText = state.db.filter(d => d.status === 'Selesai').length;
-        document.getElementById('stat-rejected').innerText = state.db.filter(d => d.status === 'Ditolak').length;
+  // 3. Render Template ke layar
+  document.getElementById('view-wrapper').innerHTML = ''; 
+  document.getElementById('view-wrapper').appendChild(document.getElementById(`view-${view}`).content.cloneNode(true));
 
-        if (state.role === 'Alumni') {
-          document.getElementById('profil-alumni').classList.remove('hide');
-          document.getElementById('lbl-nim').innerText = state.user.nim; document.getElementById('lbl-nama').innerText = state.user.nama;
-          document.getElementById('lbl-prodi').innerText = `${state.user.jurusan} - ${state.user.prodi}`; document.getElementById('lbl-tahun').innerText = state.user.tahunLulus;
-        }
-      } 
-      else if (view === 'pengajuan') {
-        document.getElementById('header-title').innerText = "Form Pengajuan";
-        document.getElementById('lblBank').innerText = `${state.pengaturan.bank} - ${state.pengaturan.rekening} (A.N. ${state.pengaturan.atasNama})`;
-      } 
-      else if (view === 'tabel') {
-        document.getElementById('header-title').innerText = "Manajemen Data"; renderTable();
-      }
+  // 4. Update Konten Sesuai View
+  if (view === 'dashboard') {
+    document.getElementById('header-title').innerText = "Dashboard Analitik";
+    
+    // Hitung setelah data dipastikan sudah ter-update
+    document.getElementById('stat-total').innerText = state.db.length;
+    document.getElementById('stat-pending').innerText = state.db.filter(d => String(d.status).toLowerCase().includes('menunggu')).length;
+    document.getElementById('stat-done').innerText = state.db.filter(d => d.status === 'Selesai').length;
+    document.getElementById('stat-rejected').innerText = state.db.filter(d => d.status === 'Ditolak').length;
+
+    if (state.role === 'Alumni') {
+      document.getElementById('profil-alumni').classList.remove('hide');
+      document.getElementById('lbl-nim').innerText = state.user.nim; 
+      document.getElementById('lbl-nama').innerText = state.user.nama;
+      document.getElementById('lbl-prodi').innerText = `${state.user.jurusan} - ${state.user.prodi}`; 
+      document.getElementById('lbl-tahun').innerText = state.user.tahunLulus;
     }
-
+  } else if (view === 'pengajuan') {
+    document.getElementById('header-title').innerText = "Form Pengajuan";
+    document.getElementById('lblBank').innerText = `${state.pengaturan.bank} - ${state.pengaturan.rekening} (A.N. ${state.pengaturan.atasNama})`;
+  } else if (view === 'tabel') {
+    document.getElementById('header-title').innerText = "Daftar Data"; 
+    renderTable();
+  }
+}
     async function fetchTableData() {
       // FIX: Menambahkan Header Bypass CORS agar aman di semua browser
       const res = await fetch(`${GAS_URL}?action=getPengajuan&role=${state.role}&nim=${state.user.nim || ''}`, { method: 'POST', redirect: 'follow', headers: { "Content-Type": "text/plain;charset=utf-8" }});
@@ -301,7 +314,7 @@
         if(d.linkTranskrip) docs += `<a href="${d.linkTranskrip}" target="_blank" class="text-blue-600 hover:underline text-xs block mb-1"><i class="fas fa-image mr-1"></i> Transkrip (${d.jmlTranskrip})</a>`;
         if(d.linkBukti) docs += `<a href="${d.linkBukti}" target="_blank" class="text-emerald-600 hover:underline text-xs font-bold block"><i class="fas fa-receipt mr-1"></i> Rp ${d.totalBiaya.toLocaleString('id-ID')}</a>`;
 
-        let btn = `<span class="text-[10px] text-slate-400 italic">Hanya Pantauan</span>`;
+        let btn = `<span class="text-[10px] text-slate-400 italic">-</span>`;
         if (state.role === 'BAAK' && d.status === 'Menunggu BAAK') btn = `<button onclick="actionStatus(${d.rowIndex}, 'Menunggu Keuangan')" class="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold block w-full mb-1.5 shadow-sm">Kirim ke Keuangan</button><button onclick="openTolak(${d.rowIndex})" class="bg-rose-50 text-rose-600 px-3 py-1.5 rounded-lg text-[10px] font-bold block w-full border border-rose-200">Tolak Berkas</button>`;
         else if (state.role === 'BAAK' && d.status === 'Proses BAAK') btn = `<button onclick="actionStatus(${d.rowIndex}, 'Selesai')" class="bg-emerald-600 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold block w-full shadow-sm"><i class="fas fa-check mr-1"></i> Tandai Selesai</button>`;
         else if (state.role === 'Keuangan' && d.status === 'Menunggu Keuangan') btn = `<button onclick="actionStatus(${d.rowIndex}, 'Proses BAAK')" class="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold block w-full mb-1.5 shadow-sm">Valid, Kembalikan ke BAAK</button><button onclick="openTolak(${d.rowIndex})" class="bg-rose-50 text-rose-600 px-3 py-1.5 rounded-lg text-[10px] font-bold block w-full border border-rose-200">Tolak Bukti Bayar</button>`;
