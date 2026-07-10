@@ -252,47 +252,45 @@
       document.getElementById('nav-menu').innerHTML = nav;
     }
 
-    async function changeView(view) {
-  // 1. Menutup sidebar otomatis di Mobile
-  if(window.innerWidth < 768) { 
-    const sb = document.getElementById('main-sidebar'); 
-    if (!sb.classList.contains('-translate-x-full')) toggleSidebar(); 
-  }
-  
-  // 2. Jika Dashboard, pastikan tarik data terbaru DULU
-  if (view === 'dashboard') {
-    await fetchTableData(); // PENTING: Tunggu data sampai ada di state.db
-  }
+async function changeView(view) {
+      // Menutup sidebar otomatis di Mobile
+      if(window.innerWidth < 768) { 
+        const sb = document.getElementById('main-sidebar'); 
+        if (!sb.classList.contains('-translate-x-full')) toggleSidebar(); 
+      }
+      
+      // Render Template dulu
+      document.getElementById('view-wrapper').innerHTML = ''; 
+      document.getElementById('view-wrapper').appendChild(document.getElementById(`view-${view}`).content.cloneNode(true));
 
-  // 3. Render Template ke layar
-  document.getElementById('view-wrapper').innerHTML = ''; 
-  document.getElementById('view-wrapper').appendChild(document.getElementById(`view-${view}`).content.cloneNode(true));
+      // Update Konten
+      if (view === 'dashboard') {
+        document.getElementById('header-title').innerText = "Dashboard Analitik";
+        
+        // --- PERBAIKAN: Fetch data dulu baru hitung ---
+        await fetchTableData(); 
+        
+        document.getElementById('stat-total').innerText = state.db.length;
+        document.getElementById('stat-pending').innerText = state.db.filter(d => String(d.status).toLowerCase().includes('menunggu')).length;
+        document.getElementById('stat-done').innerText = state.db.filter(d => d.status === 'Selesai').length;
+        document.getElementById('stat-rejected').innerText = state.db.filter(d => d.status === 'Ditolak').length;
 
-  // 4. Update Konten Sesuai View
-  if (view === 'dashboard') {
-    document.getElementById('header-title').innerText = "Dashboard Analitik";
-    
-    // Hitung setelah data dipastikan sudah ter-update
-    document.getElementById('stat-total').innerText = state.db.length;
-    document.getElementById('stat-pending').innerText = state.db.filter(d => String(d.status).toLowerCase().includes('menunggu')).length;
-    document.getElementById('stat-done').innerText = state.db.filter(d => d.status === 'Selesai').length;
-    document.getElementById('stat-rejected').innerText = state.db.filter(d => d.status === 'Ditolak').length;
-
-    if (state.role === 'Alumni') {
-      document.getElementById('profil-alumni').classList.remove('hide');
-      document.getElementById('lbl-nim').innerText = state.user.nim; 
-      document.getElementById('lbl-nama').innerText = state.user.nama;
-      document.getElementById('lbl-prodi').innerText = `${state.user.jurusan} - ${state.user.prodi}`; 
-      document.getElementById('lbl-tahun').innerText = state.user.tahunLulus;
+        if (state.role === 'Alumni') {
+          document.getElementById('profil-alumni').classList.remove('hide');
+          document.getElementById('lbl-nim').innerText = state.user.nim; 
+          document.getElementById('lbl-nama').innerText = state.user.nama;
+          document.getElementById('lbl-prodi').innerText = `${state.user.jurusan} - ${state.user.prodi}`; 
+          document.getElementById('lbl-tahun').innerText = state.user.tahunLulus;
+        }
+      } else if (view === 'pengajuan') {
+        document.getElementById('header-title').innerText = "Form Pengajuan";
+        document.getElementById('lblBank').innerText = `${state.pengaturan.bank} - ${state.pengaturan.rekening} (A.N. ${state.pengaturan.atasNama})`;
+      } else if (view === 'tabel') {
+        document.getElementById('header-title').innerText = "Daftar Data"; 
+        renderTable();
+      }
     }
-  } else if (view === 'pengajuan') {
-    document.getElementById('header-title').innerText = "Form Pengajuan";
-    document.getElementById('lblBank').innerText = `${state.pengaturan.bank} - ${state.pengaturan.rekening} (A.N. ${state.pengaturan.atasNama})`;
-  } else if (view === 'tabel') {
-    document.getElementById('header-title').innerText = "Daftar Data"; 
-    renderTable();
-  }
-}
+    
     async function fetchTableData() {
       // FIX: Menambahkan Header Bypass CORS agar aman di semua browser
       const res = await fetch(`${GAS_URL}?action=getPengajuan&role=${state.role}&nim=${state.user.nim || ''}`, { method: 'POST', redirect: 'follow', headers: { "Content-Type": "text/plain;charset=utf-8" }});
