@@ -290,13 +290,23 @@ async function changeView(view) {
       }
     }
     
-    async function fetchTableData() {
-      // FIX: Menambahkan Header Bypass CORS agar aman di semua browser
-      const res = await fetch(`${GAS_URL}?action=getPengajuan&role=${state.role}&nim=${state.user.nim || ''}`, { method: 'POST', redirect: 'follow', headers: { "Content-Type": "text/plain;charset=utf-8" }});
-      const json = await res.json();
-      if(json.status === 'success') state.db = json.data;
-    }
+    //async function fetchTableData() {
+      //FIX: Menambahkan Header Bypass CORS agar aman di semua browser
+      //const res = await fetch(`${GAS_URL}?action=getPengajuan&role=${state.role}&nim=${state.user.nim || ''}`, { method: 'POST', redirect: 'follow', headers: { "Content-Type": "text/plain;charset=utf-8" }});
+     //const json = await res.json();
+     //if(json.status === 'success') state.db = json.data;
+   //}
 
+    async function fetchTableData() {
+      try {
+        // Menggunakan apiFetch agar data Role dan NIM dikirim terbungkus rapi
+        const res = await apiFetch('getPengajuan', { role: state.role, nim: state.user.nim });
+        if(res && res.status === 'success') state.db = res.data;
+      } catch (e) {
+        console.error("Gagal menarik data");
+      }
+    }
+    
     function renderTable() {
       let html = '';
       if(state.db.length === 0) html = `<tr><td colspan="4" class="p-8 text-center text-slate-500 font-bold">Belum ada data pengajuan...</td></tr>`;
