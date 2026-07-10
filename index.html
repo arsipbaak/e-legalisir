@@ -253,22 +253,21 @@
     }
 
 async function changeView(view) {
-      // Menutup sidebar otomatis di Mobile
       if(window.innerWidth < 768) { 
         const sb = document.getElementById('main-sidebar'); 
         if (!sb.classList.contains('-translate-x-full')) toggleSidebar(); 
       }
       
-      // Render Template dulu
+      // FIX: Paksa aplikasi menarik data jika membuka Dashboard ATAU Tabel Data
+      if (view === 'dashboard' || view === 'tabel') {
+        await fetchTableData(); 
+      }
+
       document.getElementById('view-wrapper').innerHTML = ''; 
       document.getElementById('view-wrapper').appendChild(document.getElementById(`view-${view}`).content.cloneNode(true));
 
-      // Update Konten
       if (view === 'dashboard') {
         document.getElementById('header-title').innerText = "Dashboard Analitik";
-        
-        // --- PERBAIKAN: Fetch data dulu baru hitung ---
-        await fetchTableData(); 
         
         document.getElementById('stat-total').innerText = state.db.length;
         document.getElementById('stat-pending').innerText = state.db.filter(d => String(d.status).toLowerCase().includes('menunggu')).length;
