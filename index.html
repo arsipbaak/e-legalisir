@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>E-Legalisir POLTERA (Secured)</title>
+  <title>E-Legalisir POLTERA</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -44,7 +44,7 @@
           <input type="password" id="auth-password" placeholder="Password Admin..." class="w-full px-4 py-3 border rounded-lg text-sm outline-none mb-4 hide">
           
           <div id="captcha-section" class="space-y-1 mb-4 p-3 bg-blue-50 rounded-lg border border-blue-100">
-             <label class="block text-xs font-bold text-poltera-navy uppercase">Keamanan: Berapa <span id="lbl-captcha" class="text-rose-600 text-base"></span> ?</label>
+             <label class="block text-xs font-bold text-poltera-navy uppercase">Berapakah hasil dari : <span id="lbl-captcha" class="text-rose-600 text-base"></span> ?</label>
              <input type="number" id="auth-captcha" required placeholder="Ketik hasil perhitungan" class="w-full px-3 py-2 border rounded-lg text-sm outline-none mt-1">
           </div>
 
@@ -110,7 +110,7 @@
         </div>
         <div class="bg-white p-4 rounded-2xl border shadow-sm flex flex-col items-center text-center">
           <div class="w-10 h-10 mb-2 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center"><i class="fas fa-times"></i></div>
-          <p class="text-[10px] font-bold text-slate-400">Ditolak</p><p class="text-2xl font-bold" id="stat-rejected">0</p>
+          <p class="text-[10px] font-bold text-slate-400">Ditolak / Batal</p><p class="text-2xl font-bold" id="stat-rejected">0</p>
         </div>
       </div>
     </div>
@@ -152,7 +152,10 @@
 
   <template id="view-tabel">
     <div class="bg-white rounded-2xl border shadow-sm overflow-hidden flex flex-col">
-      <div class="p-4 border-b bg-slate-50"><h4 class="font-bold text-sm md:text-base">Daftar Data</h4></div>
+      <div class="p-4 border-b bg-slate-50 flex justify-between items-center">
+        <h4 class="font-bold text-sm md:text-base">Daftar Data</h4>
+        <button id="btnExport" onclick="exportToCSV()" class="hide bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm"><i class="fas fa-file-excel mr-1"></i> Export Data</button>
+      </div>
       <div class="overflow-x-auto w-full">
         <table class="w-full text-left text-sm whitespace-nowrap min-w-[700px]">
           <thead><tr class="bg-slate-100 text-slate-500 text-xs uppercase"><th class="p-4">Tanggal / Pemohon</th><th class="p-4">Berkas</th><th class="p-4 text-center">Status</th><th class="p-4 text-center">Aksi</th></tr></thead>
@@ -176,12 +179,10 @@
   <script>
     const GAS_URL = "https://script.google.com/macros/s/AKfycbwTKcKIeh5PM3VHm8fBQjSRm06NiJflI7xg4DNqosajObCCmb3TmizO-zL6XjgYigQN/exec"; 
 
-    // SECURITY PATCH: State kini menyimpan otorisasi Admin di browser (Token sementara)
     let state = { role: null, user: null, db: [], pengaturan: {}, selectedRow: 0, authAdminUser: null, authAdminPass: null };
     let selectedAuth = '';
     let currentCaptchaAnswer = 0;
 
-    // SECURITY PATCH: Sanitasi HTML untuk mematikan XSS Attack dari input usil
     function escapeHTML(str) {
       if(!str) return '';
       return String(str).replace(/[&<>'"]/g, match => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[match]);
@@ -221,7 +222,7 @@
       document.getElementById('label-username').innerText = role === 'Alumni' ? 'NIM Anda' : 'Portal Admin';
       document.getElementById('auth-username').value = ''; document.getElementById('auth-password').value = '';
       
-      generateCaptcha(); // Load Captcha tiap buka form
+      generateCaptcha();
 
       if(role === 'Alumni') {
         document.getElementById('auth-password').classList.add('hide'); document.getElementById('auth-password').removeAttribute('required');
@@ -234,12 +235,9 @@
     async function prosesLogin(e) {
       e.preventDefault();
       
-      // SECURITY PATCH: Cek Brute Force Captcha
       const captchaInput = parseInt(document.getElementById('auth-captcha').value);
       if (captchaInput !== currentCaptchaAnswer) {
-        Swal.fire('Keamanan Gagal', 'Jawaban matematika Anda salah!', 'warning');
-        generateCaptcha();
-        return;
+        Swal.fire('Login Gagal', 'Jawaban Anda salah!', 'warning'); generateCaptcha(); return;
       }
 
       const user = document.getElementById('auth-username').value; const pass = document.getElementById('auth-password').value;
@@ -254,11 +252,7 @@
           state.user = json.data; state.role = selectedAuth === 'Alumni' ? 'Alumni' : json.data.role;
           if(json.pengaturan) state.pengaturan = json.pengaturan;
           
-          // Simpan password Admin di browser sementara waktu untuk Token Keamanan IDOR
-          if (selectedAuth !== 'Alumni') {
-            state.authAdminUser = user;
-            state.authAdminPass = pass;
-          }
+          if (selectedAuth !== 'Alumni') { state.authAdminUser = user; state.authAdminPass = pass; }
           
           document.getElementById('nav-user-name').innerText = state.user.nama; document.getElementById('nav-user-role').innerText = state.role;
           document.getElementById('nav-initial').innerText = state.user.nama.charAt(0);
@@ -267,10 +261,7 @@
           await fetchTableData();
           document.getElementById('login-screen').classList.add('hide'); document.getElementById('app-screen').classList.remove('hide');
           changeView('dashboard');
-        } else {
-          Swal.fire('Gagal', json.message, 'error');
-          generateCaptcha();
-        }
+        } else { Swal.fire('Gagal', json.message, 'error'); generateCaptcha(); }
       } catch(err) { Swal.fire('Error', 'Gagal terhubung ke sistem.', 'error'); generateCaptcha(); }
       btn.innerText = "Masuk"; btn.disabled = false;
     }
@@ -295,9 +286,7 @@
         if (!sb.classList.contains('-translate-x-full')) toggleSidebar(); 
       }
       
-      if (view === 'dashboard' || view === 'tabel') {
-        await fetchTableData(); 
-      }
+      if (view === 'dashboard' || view === 'tabel') { await fetchTableData(); }
 
       document.getElementById('view-wrapper').innerHTML = ''; 
       document.getElementById('view-wrapper').appendChild(document.getElementById(`view-${view}`).content.cloneNode(true));
@@ -308,7 +297,7 @@
         document.getElementById('stat-total').innerText = state.db.length;
         document.getElementById('stat-pending').innerText = state.db.filter(d => String(d.status).toLowerCase().includes('menunggu')).length;
         document.getElementById('stat-done').innerText = state.db.filter(d => d.status === 'Selesai').length;
-        document.getElementById('stat-rejected').innerText = state.db.filter(d => d.status === 'Ditolak').length;
+        document.getElementById('stat-rejected').innerText = state.db.filter(d => d.status === 'Ditolak' || d.status === 'Dibatalkan').length;
 
         if (state.role === 'Alumni') {
           document.getElementById('profil-alumni').classList.remove('hide');
@@ -321,7 +310,8 @@
         document.getElementById('header-title').innerText = "Form Pengajuan";
         document.getElementById('lblBank').innerText = `${escapeHTML(state.pengaturan.bank)} - ${escapeHTML(state.pengaturan.rekening)} (A.N. ${escapeHTML(state.pengaturan.atasNama)})`;
       } else if (view === 'tabel') {
-        document.getElementById('header-title').innerText = "Daftar Data"; 
+        document.getElementById('header-title').innerText = "Manajemen Data";
+        if (state.role !== 'Alumni') document.getElementById('btnExport').classList.remove('hide'); 
         renderTable();
       }
     }
@@ -331,28 +321,33 @@
       if(state.db.length === 0) html = `<tr><td colspan="4" class="p-8 text-center text-slate-500 font-bold">Belum ada data pengajuan...</td></tr>`;
       
       state.db.forEach(d => {
-        // SECURITY PATCH: Implementasi Escape HTML ke Data Render
-        const sNama = escapeHTML(d.nama);
-        const sNim = escapeHTML(d.nim);
-        const sMetode = escapeHTML(d.metode);
-        const sStatus = escapeHTML(d.status);
-        const sKet = escapeHTML(d.keterangan);
+        const sNama = escapeHTML(d.nama); const sNim = escapeHTML(d.nim);
+        const sMetode = escapeHTML(d.metode); const sStatus = escapeHTML(d.status); const sKet = escapeHTML(d.keterangan);
 
         let st = `<span class="bg-amber-100 text-amber-700 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide">${sStatus}</span>`;
         if(sStatus === "Selesai") st = `<span class="bg-emerald-100 text-emerald-700 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide">${sStatus}</span>`;
         if(sStatus === "Ditolak") st = `<span class="bg-rose-100 text-rose-700 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide">${sStatus}</span><br><span class="text-[9px] text-rose-500 block mt-1">${sKet}</span>`;
-        
+        // Tampilan khusus Status Dibatalkan (IDE 5)
+        if(sStatus === "Dibatalkan") st = `<span class="bg-slate-200 text-slate-600 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide">${sStatus}</span>`;
+        // Menampilkan Resi COD (IDE 1)
+        if(sStatus === "Selesai" && sMetode.includes("COD") && sKet) st += `<br><span class="text-[9px] text-emerald-600 block mt-1 font-bold"><i class="fas fa-truck mr-1"></i> Resi: ${sKet}</span>`;
+
         let docs = '';
         if(d.linkIjazah) docs += `<a href="${d.linkIjazah}" target="_blank" class="text-blue-600 hover:underline text-xs block mb-1"><i class="fas fa-image mr-1"></i> Ijazah (${d.jmlIjazah})</a>`;
         if(d.linkTranskrip) docs += `<a href="${d.linkTranskrip}" target="_blank" class="text-blue-600 hover:underline text-xs block mb-1"><i class="fas fa-image mr-1"></i> Transkrip (${d.jmlTranskrip})</a>`;
         if(d.linkBukti) docs += `<a href="${d.linkBukti}" target="_blank" class="text-emerald-600 hover:underline text-xs font-bold block"><i class="fas fa-receipt mr-1"></i> Rp ${d.totalBiaya.toLocaleString('id-ID')}</a>`;
 
         let btn = `<span class="text-[10px] text-slate-400 italic">-</span>`;
-        if (state.role === 'BAAK' && sStatus === 'Menunggu BAAK') btn = `<button onclick="actionStatus(${d.rowIndex}, 'Menunggu Keuangan')" class="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold block w-full mb-1.5 shadow-sm">Kirim ke Keuangan</button><button onclick="openTolak(${d.rowIndex})" class="bg-rose-50 text-rose-600 px-3 py-1.5 rounded-lg text-[10px] font-bold block w-full border border-rose-200">Tolak Berkas</button>`;
+        
+        // IDE 5: Tombol Batal untuk Alumni
+        if (state.role === 'Alumni' && sStatus === 'Menunggu BAAK') {
+            btn = `<button onclick="actionStatus(${d.rowIndex}, 'Dibatalkan')" class="bg-rose-50 hover:bg-rose-100 text-rose-600 px-3 py-1.5 rounded-lg text-[10px] font-bold block w-full border border-rose-200 transition">Batalkan Pengajuan</button>`;
+        }
+        else if (state.role === 'BAAK' && sStatus === 'Menunggu BAAK') btn = `<button onclick="actionStatus(${d.rowIndex}, 'Menunggu Keuangan')" class="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold block w-full mb-1.5 shadow-sm">Kirim ke Keuangan</button><button onclick="openTolak(${d.rowIndex})" class="bg-rose-50 text-rose-600 px-3 py-1.5 rounded-lg text-[10px] font-bold block w-full border border-rose-200">Tolak Berkas</button>`;
         else if (state.role === 'BAAK' && sStatus === 'Proses BAAK') btn = `<button onclick="actionStatus(${d.rowIndex}, 'Selesai')" class="bg-emerald-600 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold block w-full shadow-sm"><i class="fas fa-check mr-1"></i> Tandai Selesai</button>`;
         else if (state.role === 'Keuangan' && sStatus === 'Menunggu Keuangan') btn = `<button onclick="actionStatus(${d.rowIndex}, 'Proses BAAK')" class="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold block w-full mb-1.5 shadow-sm">Valid, Kembalikan ke BAAK</button><button onclick="openTolak(${d.rowIndex})" class="bg-rose-50 text-rose-600 px-3 py-1.5 rounded-lg text-[10px] font-bold block w-full border border-rose-200">Tolak Bukti Bayar</button>`;
 
-        html += `<tr class="border-b hover:bg-slate-50"><td class="p-4"><p class="font-bold text-slate-700 text-sm">${sNama}</p><p class="text-[10px] text-slate-500 font-mono mt-0.5">${sNim}</p><p class="text-[10px] text-slate-400 mt-1"><i class="fas fa-truck text-[9px]"></i> ${sMetode}</p></td><td class="p-4">${docs}</td><td class="p-4 text-center">${st}</td><td class="p-4 w-32 md:w-48 text-center align-middle">${btn}</td></tr>`;
+        html += `<tr class="border-b hover:bg-slate-50"><td class="p-4"><p class="font-bold text-slate-700 text-sm">${sNama}</p><p class="text-[10px] text-slate-500 font-mono mt-0.5">${sNim}</p><p class="text-[10px] text-slate-400 mt-1"><i class="fas fa-box text-[9px]"></i> ${sMetode}</p></td><td class="p-4">${docs}</td><td class="p-4 text-center">${st}</td><td class="p-4 w-32 md:w-48 text-center align-middle">${btn}</td></tr>`;
       });
       document.getElementById('table-body').innerHTML = html;
     }
@@ -382,16 +377,35 @@
 
     async function actionStatus(rowIndex, statusBaru) {
       const item = state.db.find(d => d.rowIndex === rowIndex);
-      Swal.fire({ title: 'Setujui Berkas?', text: `Notifikasi WA otomatis dikirim ke ${item.nama}`, showCancelButton: true, confirmButtonText: 'Ya, Proses' }).then(async (res) => {
+      
+      let keteranganEkstra = '';
+      // IDE 1: Meminta input resi jika pengiriman COD dan status Selesai
+      if (statusBaru === 'Selesai' && item.metode.includes('COD')) {
+          const { value: resi, isConfirmed } = await Swal.fire({
+              title: 'Input Nomor Resi/AWB',
+              text: 'Masukkan resi ekspedisi untuk dikirim ke WhatsApp Alumni (Opsional)',
+              input: 'text',
+              inputPlaceholder: 'Contoh: JNT123456789',
+              showCancelButton: true,
+              confirmButtonText: 'Simpan',
+              cancelButtonText: 'Lewati'
+          });
+          if (!isConfirmed) return; // Jika klik batal pada pop-up, hentikan eksekusi
+          keteranganEkstra = resi || '';
+      }
+
+      let titleTxt = statusBaru === 'Dibatalkan' ? 'Batalkan Pengajuan?' : 'Setujui Berkas?';
+      let confTxt = statusBaru === 'Dibatalkan' ? 'Ya, Batalkan' : 'Ya, Proses';
+
+      Swal.fire({ title: titleTxt, text: `Notifikasi WA otomatis dikirim ke ${item.nama}`, showCancelButton: true, confirmButtonText: confTxt }).then(async (res) => {
         if(res.isConfirmed) {
-          Swal.fire({title: 'Memproses...', html: 'Mengirim otorisasi sistem...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
+          Swal.fire({title: 'Memproses...', html: 'Mengirim instruksi sistem...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
           try {
-            // SECURITY PATCH: Mengirim Auth Token ke server
             await apiFetch('updateStatus', {
-              rowIndex, statusBaru, noHp: item.noHp, nama: item.nama, metode: item.metode,
+              rowIndex, statusBaru, noHp: item.noHp, nama: item.nama, metode: item.metode, keterangan: keteranganEkstra,
               adminUser: state.authAdminUser, adminPass: state.authAdminPass
             });
-            await fetchTableData(); renderTable(); Swal.fire('Terkirim!', 'Status berubah & WA terkirim.', 'success');
+            await fetchTableData(); renderTable(); Swal.fire('Berhasil!', 'Status berubah & WA terkirim.', 'success');
           } catch(e) { Swal.fire('Gagal', 'Terjadi kesalahan sistem / Akses Ditolak.', 'error'); }
         }
       });
@@ -406,13 +420,47 @@
       
       const item = state.db.find(d => d.rowIndex === state.selectedRow);
       try {
-        // SECURITY PATCH: Mengirim Auth Token ke server
         await apiFetch('updateStatus', {
           rowIndex: item.rowIndex, statusBaru: 'Ditolak', keteranganTolak: escapeHTML(alasan), noHp: item.noHp, nama: item.nama,
           adminUser: state.authAdminUser, adminPass: state.authAdminPass
         });
         await fetchTableData(); renderTable(); Swal.fire('Ditolak', 'Berkas ditolak & WA terkirim.', 'success');
       } catch(e) { Swal.fire('Gagal', 'Terjadi kesalahan sistem / Akses Ditolak.', 'error'); }
+    }
+
+    // IDE 2: Ekspor Tabel ke Format CSV (Excel)
+    function exportToCSV() {
+      if (state.db.length === 0) return Swal.fire('Kosong', 'Tidak ada data pengajuan untuk diekspor.', 'info');
+      
+      let csvData = 'Tanggal,NIM,Nama,No_WhatsApp,Ijazah(Lbr),Transkrip(Lbr),Total_Bayar,Metode_Kirim,Status,Keterangan\n';
+      
+      state.db.forEach(d => {
+          let cleanNama = escapeHTML(d.nama);
+          let cleanMetode = escapeHTML(d.metode);
+          let cleanKet = escapeHTML(d.keterangan || '').replace(/"/g, '""'); // Cegah error tanda kutip ganda pada CSV
+          
+          let baris = [
+              d.timestamp, 
+              d.nim, 
+              `"${cleanNama}"`, 
+              `"${d.noHp}"`, 
+              d.jmlIjazah, 
+              d.jmlTranskrip, 
+              d.totalBiaya, 
+              `"${cleanMetode}"`, 
+              d.status, 
+              `"${cleanKet}"`
+          ];
+          csvData += baris.join(',') + '\n';
+      });
+
+      const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.setAttribute('download', `Rekap_E-Legalisir_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
   </script>
 </body>
