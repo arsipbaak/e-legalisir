@@ -3,7 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>E-Legalisir POLTERA</title>
+  
+  <!-- SECURITY PATCH: Content Security Policy (CSP) Tingkat Tinggi -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://script.google.com https://script.googleusercontent.com https://fonts.googleapis.com https://fonts.gstatic.com; img-src 'self' data: https:; font-src 'self' https: data:;">
+  
+  <title>E-Legalisir POLTERA (Enterprise Secure)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -34,7 +38,13 @@
         </button>
       </div>
 
-      <div id="credential-form-section" class="hide space-y-4 text-left border p-5 rounded-2xl bg-slate-50">
+      <div id="credential-form-section" class="hide space-y-4 text-left border p-5 rounded-2xl bg-slate-50 relative">
+        <!-- Overlay Loading saat fetching token CAPTCHA -->
+        <div id="captcha-loader" class="absolute inset-0 bg-white/90 z-10 flex flex-col items-center justify-center rounded-2xl hide">
+            <i class="fas fa-circle-notch fa-spin text-2xl text-poltera-navy mb-2"></i>
+            <span class="text-xs font-bold text-slate-500">Menyiapkan Keamanan Server...</span>
+        </div>
+
         <div class="flex items-center gap-2 mb-2">
           <button type="button" onclick="kembaliKePilihanRole()" class="text-slate-400"><i class="fas fa-arrow-left"></i></button>
           <span class="text-xs font-bold text-slate-500 uppercase tracking-widest" id="label-username">Login</span>
@@ -43,12 +53,13 @@
           <input type="text" id="auth-username" required placeholder="Masukkan ID..." class="w-full px-4 py-3 border rounded-lg text-sm outline-none mb-3">
           <input type="password" id="auth-password" placeholder="Password Admin..." class="w-full px-4 py-3 border rounded-lg text-sm outline-none mb-4 hide">
           
-          <div id="captcha-section" class="space-y-1 mb-4 p-3 bg-blue-50 rounded-lg border border-blue-100">
-             <label class="block text-xs font-bold text-poltera-navy uppercase">Berapakah hasil dari : <span id="lbl-captcha" class="text-rose-600 text-base"></span> ?</label>
-             <input type="number" id="auth-captcha" required placeholder="Ketik hasil perhitungan" class="w-full px-3 py-2 border rounded-lg text-sm outline-none mt-1">
+          <div id="captcha-section" class="space-y-1 mb-4 p-3 bg-red-50 rounded-lg border border-red-100">
+             <label class="block text-[10px] font-bold text-rose-800 uppercase"><i class="fas fa-shield-alt mr-1"></i> Server Security Check</label>
+             <p class="text-xs text-rose-900 mt-1">Berapa hasil dari <span id="lbl-captcha" class="text-lg font-extrabold mx-1">?</span></p>
+             <input type="number" id="auth-captcha" required placeholder="Jawaban..." class="w-full px-3 py-2 border border-rose-200 rounded-lg text-sm outline-none mt-2 focus:border-rose-400">
           </div>
 
-          <button type="submit" id="btnLogin" class="w-full bg-poltera-navy text-white text-xs font-bold py-3.5 rounded-xl">Masuk</button>
+          <button type="submit" id="btnLogin" class="w-full bg-poltera-navy hover:bg-blue-900 transition text-white text-xs font-bold py-3.5 rounded-xl">Masuk ke Sistem</button>
         </form>
       </div>
     </div>
@@ -94,7 +105,6 @@
           <div><p class="text-slate-400 text-[10px] uppercase font-bold">Tahun Lulus</p><p class="font-bold" id="lbl-tahun"></p></div>
         </div>
       </div>
-
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div class="bg-white p-4 rounded-2xl border shadow-sm flex flex-col items-center text-center">
           <div class="w-10 h-10 mb-2 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center"><i class="fas fa-file-alt"></i></div>
@@ -119,11 +129,11 @@
   <template id="view-pengajuan">
     <div class="bg-white rounded-2xl border p-5 md:p-6 shadow-sm max-w-3xl">
       <form onsubmit="submitForm(event)" class="space-y-5">
-        <h3 class="font-bold text-poltera-navy border-b pb-2 text-sm md:text-base">1. Upload Dokumen (Max 1MB)</h3>
+        <h3 class="font-bold text-poltera-navy border-b pb-2 text-sm md:text-base">1. Upload Dokumen (Max 1MB, JPG/PNG/PDF)</h3>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div><label class="block text-xs font-bold text-slate-500 mb-1">Upload Ijazah</label><input type="file" id="fileIjazah" accept="image/png, image/jpeg" class="w-full border p-2 text-xs rounded-xl" onchange="checkSize(this)"></div>
+          <div><label class="block text-xs font-bold text-slate-500 mb-1">Upload Ijazah</label><input type="file" id="fileIjazah" accept="image/png, image/jpeg, application/pdf" class="w-full border p-2 text-xs rounded-xl" onchange="checkSize(this)"></div>
           <div><label class="block text-xs font-bold text-slate-500 mb-1">Jumlah Ijazah</label><input type="number" id="jmlIjazah" value="0" min="0" class="w-full border rounded-xl p-2 text-sm outline-none focus:ring-1" onchange="hitungTotal()"></div>
-          <div><label class="block text-xs font-bold text-slate-500 mb-1">Upload Transkrip</label><input type="file" id="fileTranskrip" accept="image/png, image/jpeg" class="w-full border p-2 text-xs rounded-xl" onchange="checkSize(this)"></div>
+          <div><label class="block text-xs font-bold text-slate-500 mb-1">Upload Transkrip</label><input type="file" id="fileTranskrip" accept="image/png, image/jpeg, application/pdf" class="w-full border p-2 text-xs rounded-xl" onchange="checkSize(this)"></div>
           <div><label class="block text-xs font-bold text-slate-500 mb-1">Jumlah Transkrip</label><input type="number" id="jmlTranskrip" value="0" min="0" class="w-full border rounded-xl p-2 text-sm outline-none focus:ring-1" onchange="hitungTotal()"></div>
         </div>
 
@@ -132,7 +142,7 @@
           <p class="text-xs text-gray-600">Total Tagihan:</p><p class="text-2xl font-bold text-rose-600" id="lblTotal">Rp 0</p>
           <p class="text-xs font-bold mt-2">Transfer ke: <span id="lblBank" class="text-blue-800 block md:inline mt-1 md:mt-0"></span></p>
         </div>
-        <div><label class="block text-xs font-bold text-slate-500 mb-1">Upload Bukti Bayar *</label><input type="file" id="fileBukti" accept="image/png, image/jpeg" required class="w-full border p-2 text-xs rounded-xl" onchange="checkSize(this)"></div>
+        <div><label class="block text-xs font-bold text-slate-500 mb-1">Upload Bukti Bayar *</label><input type="file" id="fileBukti" accept="image/png, image/jpeg, application/pdf" required class="w-full border p-2 text-xs rounded-xl" onchange="checkSize(this)"></div>
 
         <h3 class="font-bold text-poltera-navy border-b pb-2 mt-6 text-sm md:text-base">3. Kontak & Pengiriman</h3>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -158,7 +168,7 @@
       </div>
       <div class="overflow-x-auto w-full">
         <table class="w-full text-left text-sm whitespace-nowrap min-w-[700px]">
-          <thead><tr class="bg-slate-100 text-slate-500 text-xs uppercase"><th class="p-4">Tanggal / Pemohon</th><th class="p-4">Berkas</th><th class="p-4 text-center">Status</th><th class="p-4 text-center">Aksi</th></tr></thead>
+          <thead><tr class="bg-slate-100 text-slate-500 text-xs uppercase"><th class="p-4">Tgl Pengajuan / Pemohon</th><th class="p-4">Brankas Berkas</th><th class="p-4 text-center">Status</th><th class="p-4 text-center">Aksi</th></tr></thead>
           <tbody id="table-body" class="divide-y divide-slate-100"></tbody>
         </table>
       </div>
@@ -179,9 +189,8 @@
   <script>
     const GAS_URL = "https://script.google.com/macros/s/AKfycbwTKcKIeh5PM3VHm8fBQjSRm06NiJflI7xg4DNqosajObCCmb3TmizO-zL6XjgYigQN/exec"; 
 
-    let state = { role: null, user: null, db: [], pengaturan: {}, selectedRow: 0, authAdminUser: null, authAdminPass: null };
+    let state = { role: null, user: null, db: [], pengaturan: {}, selectedRow: 0, authAdminUser: null, authAdminPass: null, captchaHash: null };
     let selectedAuth = '';
-    let currentCaptchaAnswer = 0;
 
     function escapeHTML(str) {
       if(!str) return '';
@@ -191,17 +200,22 @@
     async function apiFetch(action, payload = null) {
       let options = { method: 'POST', redirect: 'follow', headers: { "Content-Type": "text/plain;charset=utf-8" } };
       if(payload) options.body = JSON.stringify(payload);
-      let url = payload ? `${GAS_URL}?action=${action}` : `${GAS_URL}?action=${action}`; 
-      const res = await fetch(url, options);
+      const res = await fetch(`${GAS_URL}?action=${action}`, options);
       return await res.json();
     }
 
-    function generateCaptcha() {
-      const a = Math.floor(Math.random() * 10) + 1;
-      const b = Math.floor(Math.random() * 10) + 1;
-      currentCaptchaAnswer = a + b;
-      document.getElementById('lbl-captcha').innerText = `${a} + ${b}`;
+    // SERVER-SIDE CAPTCHA: Meminta hash dari server
+    async function loadServerCaptcha() {
+      document.getElementById('captcha-loader').classList.remove('hide');
       document.getElementById('auth-captcha').value = '';
+      try {
+        const res = await apiFetch('getCaptcha');
+        document.getElementById('lbl-captcha').innerText = res.a + " + " + res.b;
+        state.captchaHash = res.hash;
+      } catch (e) {
+        Swal.fire('Error', 'Gagal memuat sistem keamanan server.', 'error');
+      }
+      document.getElementById('captcha-loader').classList.add('hide');
     }
 
     function toggleSidebar() {
@@ -222,7 +236,7 @@
       document.getElementById('label-username').innerText = role === 'Alumni' ? 'NIM Anda' : 'Portal Admin';
       document.getElementById('auth-username').value = ''; document.getElementById('auth-password').value = '';
       
-      generateCaptcha();
+      loadServerCaptcha(); 
 
       if(role === 'Alumni') {
         document.getElementById('auth-password').classList.add('hide'); document.getElementById('auth-password').removeAttribute('required');
@@ -230,40 +244,42 @@
         document.getElementById('auth-password').classList.remove('hide'); document.getElementById('auth-password').setAttribute('required', 'true');
       }
     }
+    
     function kembaliKePilihanRole() { document.getElementById('credential-form-section').classList.add('hide'); document.getElementById('role-selection-section').classList.remove('hide'); }
 
     async function prosesLogin(e) {
       e.preventDefault();
       
-      const captchaInput = parseInt(document.getElementById('auth-captcha').value);
-      if (captchaInput !== currentCaptchaAnswer) {
-        Swal.fire('Login Gagal', 'Jawaban Anda salah!', 'warning'); generateCaptcha(); return;
-      }
-
+      const captchaInput = document.getElementById('auth-captcha').value;
       const user = document.getElementById('auth-username').value; const pass = document.getElementById('auth-password').value;
       const btn = document.getElementById('btnLogin'); btn.innerText = "Memverifikasi..."; btn.disabled = true;
 
       try {
-        const url = selectedAuth === 'Alumni' ? `${GAS_URL}?action=loginAlumni&nim=${user}` : `${GAS_URL}?action=loginAdmin&username=${user}&password=${pass}`;
-        const res = await fetch(url, { method: 'POST', redirect: 'follow', headers: { "Content-Type": "text/plain;charset=utf-8" } });
-        const json = await res.json();
+        const payload = { 
+          nim: user, username: user, password: pass, 
+          captchaAnswer: captchaInput, captchaHash: state.captchaHash 
+        };
+        const action = selectedAuth === 'Alumni' ? 'loginAlumni' : 'loginAdmin';
+        const json = await apiFetch(action, payload);
 
         if (json.status === 'success') {
           state.user = json.data; state.role = selectedAuth === 'Alumni' ? 'Alumni' : json.data.role;
           if(json.pengaturan) state.pengaturan = json.pengaturan;
           
-          if (selectedAuth !== 'Alumni') { state.authAdminUser = user; state.authAdminPass = pass; }
+          if (selectedAuth !== 'Alumni') { state.authAdminUser = user; state.authAdminPass = json.authHash; }
           
           document.getElementById('nav-user-name').innerText = state.user.nama; document.getElementById('nav-user-role').innerText = state.role;
           document.getElementById('nav-initial').innerText = state.user.nama.charAt(0);
           
-          buildMenu(); 
-          await fetchTableData();
+          buildMenu(); await fetchTableData();
           document.getElementById('login-screen').classList.add('hide'); document.getElementById('app-screen').classList.remove('hide');
           changeView('dashboard');
-        } else { Swal.fire('Gagal', json.message, 'error'); generateCaptcha(); }
-      } catch(err) { Swal.fire('Error', 'Gagal terhubung ke sistem.', 'error'); generateCaptcha(); }
-      btn.innerText = "Masuk"; btn.disabled = false;
+        } else {
+          Swal.fire('Login Ditolak', json.message, 'error');
+          loadServerCaptcha();
+        }
+      } catch(err) { Swal.fire('Error', 'Gagal terhubung ke server.', 'error'); loadServerCaptcha(); }
+      btn.innerText = "Masuk ke Sistem"; btn.disabled = false;
     }
 
     function buildMenu() {
@@ -275,7 +291,7 @@
 
     async function fetchTableData() {
       try {
-        const res = await apiFetch('getPengajuan', { role: state.role, nim: state.user.nim });
+        const res = await apiFetch('getPengajuan', { role: state.role, nim: state.user.nim, adminUser: state.authAdminUser, adminPass: state.authAdminPass });
         if(res && res.status === 'success') state.db = res.data;
       } catch (e) { console.error("Gagal menarik data"); }
     }
@@ -286,7 +302,7 @@
         if (!sb.classList.contains('-translate-x-full')) toggleSidebar(); 
       }
       
-      if (view === 'dashboard' || view === 'tabel') { await fetchTableData(); }
+      if (view === 'dashboard' || view === 'tabel') await fetchTableData(); 
 
       document.getElementById('view-wrapper').innerHTML = ''; 
       document.getElementById('view-wrapper').appendChild(document.getElementById(`view-${view}`).content.cloneNode(true));
@@ -316,6 +332,24 @@
       }
     }
 
+    // SECURE FILE VIEWER: Mendownload Blob Base64 dari Server
+    async function viewSecureFile(fileId, filenameRaw) {
+       Swal.fire({title: 'Autentikasi Brankas', html: 'Mendekripsi file dari server...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
+       try {
+          const payload = { role: state.role, nim: state.user?.nim, adminUser: state.authAdminUser, adminPass: state.authAdminPass, fileId: fileId };
+          const res = await apiFetch('getFile', payload);
+          if (res && res.status === 'success') {
+             Swal.close();
+             const link = document.createElement('a');
+             link.href = `data:${res.mimeType};base64,${res.base64}`;
+             link.download = "Secure_" + res.filename;
+             link.click();
+          } else {
+             Swal.fire('Ditolak', res.message || 'Gagal mengakses file.', 'error');
+          }
+       } catch(e) { Swal.fire('Error', 'Koneksi ke server terputus.', 'error'); }
+    }
+
     function renderTable() {
       let html = '';
       if(state.db.length === 0) html = `<tr><td colspan="4" class="p-8 text-center text-slate-500 font-bold">Belum ada data pengajuan...</td></tr>`;
@@ -323,36 +357,36 @@
       state.db.forEach(d => {
         const sNama = escapeHTML(d.nama); const sNim = escapeHTML(d.nim);
         const sMetode = escapeHTML(d.metode); const sStatus = escapeHTML(d.status); const sKet = escapeHTML(d.keterangan);
+        // Tanggal Pengajuan Menjadi Lebih Jelas
+        const sTgl = escapeHTML(d.timestamp).split(' ')[0];
 
         let st = `<span class="bg-amber-100 text-amber-700 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide">${sStatus}</span>`;
         if(sStatus === "Selesai") st = `<span class="bg-emerald-100 text-emerald-700 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide">${sStatus}</span>`;
         if(sStatus === "Ditolak") st = `<span class="bg-rose-100 text-rose-700 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide">${sStatus}</span><br><span class="text-[9px] text-rose-500 block mt-1">${sKet}</span>`;
-        // Tampilan khusus Status Dibatalkan (IDE 5)
         if(sStatus === "Dibatalkan") st = `<span class="bg-slate-200 text-slate-600 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide">${sStatus}</span>`;
-        // Menampilkan Resi COD (IDE 1)
         if(sStatus === "Selesai" && sMetode.includes("COD") && sKet) st += `<br><span class="text-[9px] text-emerald-600 block mt-1 font-bold"><i class="fas fa-truck mr-1"></i> Resi: ${sKet}</span>`;
 
+        // Render Tombol Brankas (Private File)
         let docs = '';
-        if(d.linkIjazah) docs += `<a href="${d.linkIjazah}" target="_blank" class="text-blue-600 hover:underline text-xs block mb-1"><i class="fas fa-image mr-1"></i> Ijazah (${d.jmlIjazah})</a>`;
-        if(d.linkTranskrip) docs += `<a href="${d.linkTranskrip}" target="_blank" class="text-blue-600 hover:underline text-xs block mb-1"><i class="fas fa-image mr-1"></i> Transkrip (${d.jmlTranskrip})</a>`;
-        if(d.linkBukti) docs += `<a href="${d.linkBukti}" target="_blank" class="text-emerald-600 hover:underline text-xs font-bold block"><i class="fas fa-receipt mr-1"></i> Rp ${d.totalBiaya.toLocaleString('id-ID')}</a>`;
+        if(d.linkIjazah) docs += `<button onclick="viewSecureFile('${d.linkIjazah}')" class="text-blue-600 hover:underline text-[11px] block mb-1 text-left w-full"><i class="fas fa-lock mr-1 text-rose-500"></i> Buka Ijazah (${d.jmlIjazah})</button>`;
+        if(d.linkTranskrip) docs += `<button onclick="viewSecureFile('${d.linkTranskrip}')" class="text-blue-600 hover:underline text-[11px] block mb-1 text-left w-full"><i class="fas fa-lock mr-1 text-rose-500"></i> Buka Transkrip (${d.jmlTranskrip})</button>`;
+        if(d.linkBukti) docs += `<button onclick="viewSecureFile('${d.linkBukti}')" class="text-emerald-600 hover:underline text-[11px] font-bold block text-left w-full mt-2 border-t pt-1 border-slate-100"><i class="fas fa-receipt mr-1"></i> Rp ${d.totalBiaya.toLocaleString('id-ID')}</button>`;
 
         let btn = `<span class="text-[10px] text-slate-400 italic">-</span>`;
         
-        // IDE 5: Tombol Batal untuk Alumni
-        if (state.role === 'Alumni' && sStatus === 'Menunggu BAAK') {
-            btn = `<button onclick="actionStatus(${d.rowIndex}, 'Dibatalkan')" class="bg-rose-50 hover:bg-rose-100 text-rose-600 px-3 py-1.5 rounded-lg text-[10px] font-bold block w-full border border-rose-200 transition">Batalkan Pengajuan</button>`;
-        }
+        if (state.role === 'Alumni' && sStatus === 'Menunggu BAAK') btn = `<button onclick="actionStatus(${d.rowIndex}, 'Dibatalkan')" class="bg-rose-50 hover:bg-rose-100 text-rose-600 px-3 py-1.5 rounded-lg text-[10px] font-bold block w-full border border-rose-200 transition">Batalkan Pengajuan</button>`;
         else if (state.role === 'BAAK' && sStatus === 'Menunggu BAAK') btn = `<button onclick="actionStatus(${d.rowIndex}, 'Menunggu Keuangan')" class="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold block w-full mb-1.5 shadow-sm">Kirim ke Keuangan</button><button onclick="openTolak(${d.rowIndex})" class="bg-rose-50 text-rose-600 px-3 py-1.5 rounded-lg text-[10px] font-bold block w-full border border-rose-200">Tolak Berkas</button>`;
         else if (state.role === 'BAAK' && sStatus === 'Proses BAAK') btn = `<button onclick="actionStatus(${d.rowIndex}, 'Selesai')" class="bg-emerald-600 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold block w-full shadow-sm"><i class="fas fa-check mr-1"></i> Tandai Selesai</button>`;
         else if (state.role === 'Keuangan' && sStatus === 'Menunggu Keuangan') btn = `<button onclick="actionStatus(${d.rowIndex}, 'Proses BAAK')" class="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold block w-full mb-1.5 shadow-sm">Valid, Kembalikan ke BAAK</button><button onclick="openTolak(${d.rowIndex})" class="bg-rose-50 text-rose-600 px-3 py-1.5 rounded-lg text-[10px] font-bold block w-full border border-rose-200">Tolak Bukti Bayar</button>`;
 
-        html += `<tr class="border-b hover:bg-slate-50"><td class="p-4"><p class="font-bold text-slate-700 text-sm">${sNama}</p><p class="text-[10px] text-slate-500 font-mono mt-0.5">${sNim}</p><p class="text-[10px] text-slate-400 mt-1"><i class="fas fa-box text-[9px]"></i> ${sMetode}</p></td><td class="p-4">${docs}</td><td class="p-4 text-center">${st}</td><td class="p-4 w-32 md:w-48 text-center align-middle">${btn}</td></tr>`;
+        // Render Tanggal di bawah nama
+        html += `<tr class="border-b hover:bg-slate-50"><td class="p-4"><p class="font-bold text-slate-700 text-sm">${sNama}</p><p class="text-[10px] font-bold text-slate-400 mt-1"><i class="fas fa-calendar-alt"></i> Tgl: ${sTgl}</p><p class="text-[10px] text-slate-500 font-mono mt-0.5">${sNim}</p><p class="text-[10px] text-slate-400 mt-1"><i class="fas fa-box text-[9px]"></i> ${sMetode}</p></td><td class="p-4 bg-slate-50 border-x border-slate-100/50">${docs}</td><td class="p-4 text-center">${st}</td><td class="p-4 w-32 md:w-48 text-center align-middle">${btn}</td></tr>`;
       });
       document.getElementById('table-body').innerHTML = html;
     }
 
-    function checkSize(input) { if (input.files[0] && input.files[0].size > 1048576) { Swal.fire('Peringatan', 'Max 1MB', 'warning'); input.value = ''; } }
+    // Client Side Size Verification (1MB) - Server ALSO checks this now
+    function checkSize(input) { if (input.files[0] && input.files[0].size > 1048576) { Swal.fire('Ditolak', 'Batas maksimal 1MB per file', 'warning'); input.value = ''; } }
     function toggleAlamat() { document.getElementById('alamat-container').classList.toggle('hide', document.getElementById('metode').value !== 'Ekspedisi COD'); }
     function hitungTotal() { const t = ((parseInt(document.getElementById('jmlIjazah').value)||0) + (parseInt(document.getElementById('jmlTranskrip').value)||0)) * state.pengaturan.biaya; document.getElementById('lblTotal').innerText = `Rp ${t.toLocaleString('id-ID')}`; return t; }
     const getBase64 = (f) => new Promise((r) => { if(!f) r(null); else { const rd = new FileReader(); rd.readAsDataURL(f); rd.onload = () => r(rd.result); } });
@@ -365,48 +399,30 @@
       const fileBukti = document.getElementById('fileBukti').files[0]; const metode = document.getElementById('metode').value; const alamat = escapeHTML(document.getElementById('alamat').value);
       if(metode === 'Ekspedisi COD' && !alamat) return Swal.fire('Error', 'Isi alamat tujuan kirim!', 'error');
 
-      Swal.fire({title: 'Mengunggah Data', html: 'Harap tunggu, proses ke server dapat memakan waktu 15 - 30 detik...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
+      Swal.fire({title: 'Mengunggah Berkas', html: 'Server sedang memverifikasi ukuran & ekstensi file...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
       
       try {
         const payload = { nim: state.user.nim, nama: state.user.nama, prodi: state.user.prodi, noHp: document.getElementById('noHp').value, jmlIjazah: jIjazah, jmlTranskrip: jTranskrip, totalBiaya: hitungTotal(), metode: metode, alamat: alamat, fileIjazah: await getBase64(document.getElementById('fileIjazah').files[0]), fileTranskrip: await getBase64(document.getElementById('fileTranskrip').files[0]), fileBukti: await getBase64(fileBukti) };
-        await apiFetch('submit', payload);
-        Swal.fire('Sukses', 'Pengajuan berhasil dikirim.', 'success');
-        await fetchTableData(); changeView('tabel');
+        const req = await apiFetch('submit', payload);
+        if(req.status === 'success') { Swal.fire('Sukses', 'Pengajuan berhasil dikirim.', 'success'); await fetchTableData(); changeView('tabel'); }
+        else { Swal.fire('Ditolak', req.message, 'error'); }
       } catch(e) { Swal.fire('Error', 'Koneksi gagal saat upload', 'error'); }
     }
 
     async function actionStatus(rowIndex, statusBaru) {
       const item = state.db.find(d => d.rowIndex === rowIndex);
-      
       let keteranganEkstra = '';
-      // IDE 1: Meminta input resi jika pengiriman COD dan status Selesai
       if (statusBaru === 'Selesai' && item.metode.includes('COD')) {
-          const { value: resi, isConfirmed } = await Swal.fire({
-              title: 'Input Nomor Resi/AWB',
-              text: 'Masukkan resi ekspedisi untuk dikirim ke WhatsApp Alumni (Opsional)',
-              input: 'text',
-              inputPlaceholder: 'Contoh: JNT123456789',
-              showCancelButton: true,
-              confirmButtonText: 'Simpan',
-              cancelButtonText: 'Lewati'
-          });
-          if (!isConfirmed) return; // Jika klik batal pada pop-up, hentikan eksekusi
-          keteranganEkstra = resi || '';
+          const { value: resi, isConfirmed } = await Swal.fire({ title: 'Input Nomor Resi', input: 'text', showCancelButton: true, confirmButtonText: 'Simpan' });
+          if (!isConfirmed) return; keteranganEkstra = resi || '';
       }
-
-      let titleTxt = statusBaru === 'Dibatalkan' ? 'Batalkan Pengajuan?' : 'Setujui Berkas?';
-      let confTxt = statusBaru === 'Dibatalkan' ? 'Ya, Batalkan' : 'Ya, Proses';
-
-      Swal.fire({ title: titleTxt, text: `Notifikasi WA otomatis dikirim ke ${item.nama}`, showCancelButton: true, confirmButtonText: confTxt }).then(async (res) => {
+      Swal.fire({ title: 'Konfirmasi', text: `WA otomatis akan dikirim ke ${item.nama}`, showCancelButton: true, confirmButtonText: 'Proses' }).then(async (res) => {
         if(res.isConfirmed) {
-          Swal.fire({title: 'Memproses...', html: 'Mengirim instruksi sistem...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
+          Swal.fire({title: 'Memproses...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
           try {
-            await apiFetch('updateStatus', {
-              rowIndex, statusBaru, noHp: item.noHp, nama: item.nama, metode: item.metode, keterangan: keteranganEkstra,
-              adminUser: state.authAdminUser, adminPass: state.authAdminPass
-            });
-            await fetchTableData(); renderTable(); Swal.fire('Berhasil!', 'Status berubah & WA terkirim.', 'success');
-          } catch(e) { Swal.fire('Gagal', 'Terjadi kesalahan sistem / Akses Ditolak.', 'error'); }
+            await apiFetch('updateStatus', { rowIndex, statusBaru, noHp: item.noHp, nama: item.nama, metode: item.metode, keterangan: keteranganEkstra, adminUser: state.authAdminUser, adminPass: state.authAdminPass });
+            await fetchTableData(); renderTable(); Swal.fire('Berhasil!', 'Data tersimpan.', 'success');
+          } catch(e) { Swal.fire('Gagal', 'Terjadi kesalahan sistem.', 'error'); }
         }
       });
     }
@@ -415,52 +431,22 @@
     
     async function prosesTolak() {
       const alasan = document.getElementById('alasanTolak').value; if(!alasan) return Swal.fire('Peringatan','Wajib isi alasan!','warning');
-      document.getElementById('modalTolak').classList.add('hide');
-      Swal.fire({title: 'Menolak Berkas...', html: 'Mengirim otorisasi sistem...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
-      
+      document.getElementById('modalTolak').classList.add('hide'); Swal.fire({title: 'Menolak Berkas...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
       const item = state.db.find(d => d.rowIndex === state.selectedRow);
       try {
-        await apiFetch('updateStatus', {
-          rowIndex: item.rowIndex, statusBaru: 'Ditolak', keteranganTolak: escapeHTML(alasan), noHp: item.noHp, nama: item.nama,
-          adminUser: state.authAdminUser, adminPass: state.authAdminPass
-        });
-        await fetchTableData(); renderTable(); Swal.fire('Ditolak', 'Berkas ditolak & WA terkirim.', 'success');
-      } catch(e) { Swal.fire('Gagal', 'Terjadi kesalahan sistem / Akses Ditolak.', 'error'); }
+        await apiFetch('updateStatus', { rowIndex: item.rowIndex, statusBaru: 'Ditolak', keteranganTolak: escapeHTML(alasan), noHp: item.noHp, nama: item.nama, adminUser: state.authAdminUser, adminPass: state.authAdminPass });
+        await fetchTableData(); renderTable(); Swal.fire('Ditolak', 'Berkas ditolak.', 'success');
+      } catch(e) { Swal.fire('Gagal', 'Terjadi kesalahan sistem.', 'error'); }
     }
 
-    // IDE 2: Ekspor Tabel ke Format CSV (Excel)
     function exportToCSV() {
-      if (state.db.length === 0) return Swal.fire('Kosong', 'Tidak ada data pengajuan untuk diekspor.', 'info');
-      
-      let csvData = 'Tanggal,NIM,Nama,No_WhatsApp,Ijazah(Lbr),Transkrip(Lbr),Total_Bayar,Metode_Kirim,Status,Keterangan\n';
-      
-      state.db.forEach(d => {
-          let cleanNama = escapeHTML(d.nama);
-          let cleanMetode = escapeHTML(d.metode);
-          let cleanKet = escapeHTML(d.keterangan || '').replace(/"/g, '""'); // Cegah error tanda kutip ganda pada CSV
-          
-          let baris = [
-              d.timestamp, 
-              d.nim, 
-              `"${cleanNama}"`, 
-              `"${d.noHp}"`, 
-              d.jmlIjazah, 
-              d.jmlTranskrip, 
-              d.totalBiaya, 
-              `"${cleanMetode}"`, 
-              d.status, 
-              `"${cleanKet}"`
-          ];
-          csvData += baris.join(',') + '\n';
-      });
-
+      if (state.db.length === 0) return Swal.fire('Kosong', 'Tidak ada data untuk diekspor.', 'info');
+      let csvData = 'Tanggal,NIM,Nama,No_WhatsApp,Ijazah,Transkrip,Total,Metode,Status,Keterangan\n';
+      state.db.forEach(d => { csvData += `${d.timestamp},${d.nim},"${escapeHTML(d.nama)}","${d.noHp}",${d.jmlIjazah},${d.jmlTranskrip},${d.totalBiaya},"${escapeHTML(d.metode)}",${d.status},"${escapeHTML(d.keterangan || '').replace(/"/g, '""')}"\n`; });
       const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.setAttribute('download', `Rekap_E-Legalisir_${new Date().toISOString().split('T')[0]}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      const link = document.createElement('a'); link.href = URL.createObjectURL(blob);
+      link.setAttribute('download', `E-Legalisir_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link); link.click(); document.body.removeChild(link);
     }
   </script>
 </body>
